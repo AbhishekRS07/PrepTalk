@@ -24,8 +24,28 @@ const StartInterview = ({ params }) => {
         .where(eq(PrepTalk.mockId, params.interviewId));
       
       if (result.length > 0) {
-        const jsonMockResp = JSON.parse(result[0].jsonMockResp);
-        console.log(jsonMockResp);
+        const rawJsonMockResp = result[0].jsonMockResp;
+        console.log("Raw JSON Response:", rawJsonMockResp); // Log the raw JSON string
+  
+        // Clean up the JSON string if necessary
+        const cleanedResponse = rawJsonMockResp
+          .replace(/^[^{[]*/, '')  // Remove anything before the first `{` or `[`
+          .replace(/[^}\]]*$/, '')  // Remove anything after the last `}` or `]`
+          .trim();  // Remove leading/trailing whitespace
+  
+        // Add square brackets to make it a valid JSON array if needed
+        let validJsonResponse = cleanedResponse;
+  
+        if (!cleanedResponse.startsWith('[')) {
+          validJsonResponse = `[${cleanedResponse}]`;
+        }
+  
+        console.log("Cleaned JSON Response:", validJsonResponse); // Log the cleaned JSON string
+  
+        // Attempt to parse the JSON string
+        const jsonMockResp = JSON.parse(validJsonResponse);
+        console.log("Parsed JSON Response:", jsonMockResp);
+        
         setPrepTalks(jsonMockResp);
         setInterviewData(result[0]);
       } else {
@@ -60,12 +80,12 @@ const StartInterview = ({ params }) => {
           </Button>
         )}
         {active === prepTalks?.length - 1 && (
-         <Link href={'/dashboard/interview/'+interviewData?.mockId+"/feedback"}>
-         <Button 
-            className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg"
-          >
-            End Interview
-          </Button>
+          <Link href={'/dashboard/interview/' + interviewData?.mockId + "/feedback"}>
+            <Button 
+              className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg"
+            >
+              End Interview
+            </Button>
           </Link>
         )}
       </div>
@@ -81,11 +101,7 @@ const StartInterview = ({ params }) => {
           active={active} 
           interviewData={interviewData} 
         />
-
-
-
       </div>
-     
     </div>
   );
 };

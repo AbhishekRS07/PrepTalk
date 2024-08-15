@@ -70,7 +70,7 @@ const AddNewInterview = () => {
         console.log("Inserted ID:", resp);
         if(resp){
           setOpenDialog(false)
-          route.push('/dashboard/interview'+resp[0]?.mockId)
+          route.push('/dashboard/interview/'+resp[0]?.mockId)
         }
       } else {
         console.log("error");

@@ -30,13 +30,17 @@ const Feedback = ({ params }) => {
         .where(eq(UserAnswer.mockIdRef, params.interviewId))
         .orderBy(UserAnswer.id);
 
-      console.log(result);
+      console.log("Fetched feedback data:", result); // Log the fetched data
       setFeedbackList(result);
 
-      // Calculate the average rating
-      const totalRating = result.reduce((sum, item) => sum + parseFloat(item.rating), 0);
-      const average = (totalRating / result.length).toFixed(1); // Keep one decimal point
-      setAverageRating(average);
+      if (result.length > 0) {
+        // Calculate the average rating
+        const totalRating = result.reduce((sum, item) => sum + parseFloat(item.rating), 0);
+        const average = (totalRating / result.length).toFixed(1); // Keep one decimal point
+        setAverageRating(average);
+      } else {
+        console.warn("No feedback data found for the given interview ID.");
+      }
     } catch (error) {
       console.error("Error fetching feedback:", error);
     }
@@ -45,13 +49,12 @@ const Feedback = ({ params }) => {
   return (
     <div className="p-10 min-h-screen">
       <div className="bg-white p-8 rounded-lg shadow-md">
-       
         {feedbackList.length === 0 ? (
           <h2 className="font-bold text-xl text-gray-500">No Interview Record Found</h2>
         ) : (
           <>
-           <h2 className="text-4xl font-extrabold text-green-600 mb-4">Congratulations!</h2>
-           <h2 className="font-semibold text-2xl text-gray-800">Here is your Interview Feedback</h2>
+            <h2 className="text-4xl font-extrabold text-green-600 mb-4">Congratulations!</h2>
+            <h2 className="font-semibold text-2xl text-gray-800">Here is your Interview Feedback</h2>
             <h2 className="text-xl text-gray-600 my-4">
               Your overall interview rating:{" "}
               <strong className="text-green-700">{averageRating}/10</strong>
