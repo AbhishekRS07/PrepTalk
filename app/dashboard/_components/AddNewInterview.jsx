@@ -11,7 +11,7 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Textarea } from "../../../components/ui/textarea";
 import { LoaderCircle, Plus, Sparkles } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -22,7 +22,7 @@ const AddNewInterview = () => {
   const [jobExperience, setJobExperience] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const { user } = useUser();
+  const { user } = useAuth();
   const router = useRouter();
 
   const onSubmit = async (e) => {
@@ -38,7 +38,7 @@ const AddNewInterview = () => {
           jobPosition,
           jobDesc,
           jobExperience,
-          userEmail: user?.primaryEmailAddress?.emailAddress,
+          userEmail: user?.email,
         }),
       });
 

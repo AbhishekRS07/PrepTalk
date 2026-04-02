@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { runPrompt } from "@/lib/langchain";
 import { db } from "@/utils/db";
@@ -7,8 +7,9 @@ import { v4 as uuidv4 } from "uuid";
 import moment from "moment";
 
 export async function POST(request) {
-  const { userId } = await auth();
-  if (!userId) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

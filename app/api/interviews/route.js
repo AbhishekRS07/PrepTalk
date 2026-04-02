@@ -1,12 +1,13 @@
-import { auth } from "@clerk/nextjs/server";
+import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { db } from "@/utils/db";
 import { PrepTalk } from "@/utils/schema";
 import { eq, desc } from "drizzle-orm";
 
 export async function GET(request) {
-  const { userId } = await auth();
-  if (!userId) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

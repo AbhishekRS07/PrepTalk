@@ -1,12 +1,12 @@
 "use client";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import InterviewCard from "./InterviewCard";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
 const InterviewList = () => {
-  const { user } = useUser();
+  const { user } = useAuth();
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,7 +17,7 @@ const InterviewList = () => {
 
   const GetInterviews = async () => {
     try {
-      const email = user?.primaryEmailAddress?.emailAddress;
+      const email = user?.email;
       const res = await fetch(`/api/interviews?email=${encodeURIComponent(email)}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load interviews");
