@@ -1,9 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { Button } from "../../../components/ui/button";
-import { db } from "../../../utils/db";
-import { PrepTalk } from "../../../utils/schema";
-import { eq } from "drizzle-orm";
 import { CalendarDays, Briefcase, ChevronRight, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -26,7 +23,7 @@ const InterviewCard = ({ interview, onDelete }) => {
   const onDeleteClick = async () => {
     setDeleting(true);
     try {
-      await db.delete(PrepTalk).where(eq(PrepTalk.mockId, interview.mockId));
+      await fetch(`/api/interview/${interview.mockId}`, { method: "DELETE" });
       onDelete(interview.mockId);
     } catch (error) {
       console.error("Error deleting interview:", error);

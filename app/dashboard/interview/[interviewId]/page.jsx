@@ -1,8 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { db } from "../../../../utils/db";
-import { PrepTalk } from "../../../../utils/schema";
-import { eq } from "drizzle-orm";
 import Webcam from "react-webcam";
 import { Lightbulb, Video, VideoOff, ArrowRight, Briefcase, Clock, Code2 } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
@@ -27,11 +24,11 @@ const InterView = ({ params }) => {
   }, [params.interviewId]);
 
   const GetInterviewDetails = async () => {
-    const result = await db
-      .select()
-      .from(PrepTalk)
-      .where(eq(PrepTalk.mockId, params.interviewId));
-    setInterviewData(result[0]);
+    const res = await fetch(`/api/interview/${params.interviewId}`);
+    if (res.ok) {
+      const data = await res.json();
+      setInterviewData(data);
+    }
   };
 
   const handleEnableWebcam = () => {

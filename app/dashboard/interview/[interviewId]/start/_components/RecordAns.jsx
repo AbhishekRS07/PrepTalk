@@ -4,12 +4,8 @@ import WebcamComponent from "react-webcam";
 import useSpeechToText from "react-hook-speech-to-text";
 import { Mic, MicOff, Loader2, VideoOff } from "lucide-react";
 import { Button } from "../../../../../../components/ui/button";
-import { chatSession } from "../../../../../../lib/GorqAIModal";
-import { db } from "../../../../../../utils/db";
-import { UserAnswer } from "../../../../../../utils/schema";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
-import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -64,26 +60,19 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
 
     setLoading(true);
     try {
-      const prompt = `Question: ${question.question}\nUser Answer: ${answer}\n\nRate this answer out of 10 and give feedback for improvement in 3-5 lines. Reply ONLY in JSON with fields "rating" (number only, e.g. 7) and "feedback" (string).`;
-
-      const result = await chatSession.sendMessage(prompt);
-      const raw = (await result.response.text())
-        .replace(/```json/g, "").replace(/```/g, "").trim();
-
-      const parsed = JSON.parse(raw);
-      // Ensure rating is a clean number string
-      const rating = String(parsed?.rating).replace(/[^0-9.]/g, "") || "0";
-
-      await db.insert(UserAnswer).values({
-        mockIdRef: interviewData?.mockId,
-        question: question.question,
-        correctAns: question.answer,
-        userAns: answer,
-        feedback: parsed?.feedback,
-        rating,
-        userEmail: user?.primaryEmailAddress?.emailAddress,
-        createdAt: moment().format("DD-MM-yyyy"),
+      const res = await fetch("/api/answer/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mockIdRef: interviewData?.mockId,
+          question: question.question,
+          correctAns: question.answer,
+          userAns: answer,
+          userEmail: user?.primaryEmailAddress?.emailAddress,
+        }),
       });
+
+      if (!res.ok) throw new Error("Failed to save answer");
 
       toast.success("Answer saved");
       setResults([]);

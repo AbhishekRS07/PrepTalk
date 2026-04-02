@@ -1,9 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db } from "../../../../../utils/db";
-import { UserAnswer, PrepTalk } from "../../../../../utils/schema";
-import { eq } from "drizzle-orm";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../../../../../components/ui/button";
@@ -198,17 +195,12 @@ const Feedback = ({ params }) => {
   const GetFeedback = async () => {
     try {
       // Fetch saved answers
-      const answers = await db
-        .select()
-        .from(UserAnswer)
-        .where(eq(UserAnswer.mockIdRef, params.interviewId))
-        .orderBy(UserAnswer.id);
+      const answersRes = await fetch(`/api/answer/${params.interviewId}`);
+      const answers = await answersRes.json();
 
       // Fetch the original interview questions
-      const interviewRows = await db
-        .select()
-        .from(PrepTalk)
-        .where(eq(PrepTalk.mockId, params.interviewId));
+      const interviewRes = await fetch(`/api/interview/${params.interviewId}`);
+      const interviewRows = interviewRes.ok ? [await interviewRes.json()] : [];
 
       let allQuestions = [];
       if (interviewRows.length > 0) {

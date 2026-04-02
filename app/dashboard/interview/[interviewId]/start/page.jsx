@@ -1,9 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PrepTalk } from "../../../../../utils/schema";
-import { db } from "../../../../../utils/db";
-import { eq } from "drizzle-orm";
 import dynamic from "next/dynamic";
 import QuestionsSection from "./_components/QuestionsSection";
 import { Button } from "../../../../../components/ui/button";
@@ -36,18 +33,14 @@ const StartInterview = ({ params }) => {
 
   const GetInterviewDetails = async () => {
     try {
-      const result = await db
-        .select()
-        .from(PrepTalk)
-        .where(eq(PrepTalk.mockId, params.interviewId));
-
-      if (result.length > 0) {
-        const raw = result[0].jsonMockResp;
-        const cleaned = raw.replace(/^[^{[]*/, "").replace(/[^}\]]*$/, "").trim();
-        const valid = cleaned.startsWith("[") ? cleaned : `[${cleaned}]`;
-        setPrepTalks(JSON.parse(valid));
-        setInterviewData(result[0]);
-      }
+      const res = await fetch(`/api/interview/${params.interviewId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const raw = data.jsonMockResp;
+      const cleaned = raw.replace(/^[^{[]*/, "").replace(/[^}\]]*$/, "").trim();
+      const valid = cleaned.startsWith("[") ? cleaned : `[${cleaned}]`;
+      setPrepTalks(JSON.parse(valid));
+      setInterviewData(data);
     } catch (err) {
       console.error("Error fetching interview:", err);
     }

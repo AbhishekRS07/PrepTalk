@@ -18,8 +18,18 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
-import { chatSession } from "../../../lib/GorqAIModal";
 import { cn } from "@/lib/utils";
+
+async function generateText(prompt) {
+  const res = await fetch("/api/questions/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Generation failed");
+  return data.text;
+}
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -348,8 +358,7 @@ function DSATab() {
 "title" (string), "difficulty" (exactly "Easy" or "Medium" or "Hard"), "topic" (string), "description" (string, max 2 sentences, no special characters or newlines), "examples" (array of 2 objects each with "input" string and "output" string), "constraints" (array of 2 strings), "hint" (string, 1 sentence).
 Use only standard ASCII. No markdown, no code blocks, no explanation outside the JSON array.`;
 
-      const result = await chatSession.sendMessage(prompt);
-      const text = await result.response.text();
+      const text = await generateText(prompt);
 
       // Strip markdown fences
       let s = text.replace(/```[\w]*\n?/g, "").replace(/```/g, "");
@@ -546,8 +555,7 @@ function InterviewQATab() {
     setLoading(true);
     try {
       const prompt = `Generate exactly 10 interview questions and answers for the role of "${profile}" with ${experience} year(s) of experience. These should be ${nextPage === 0 ? "fundamental" : "different from common/basic"} questions. Reply ONLY as a JSON array with objects having "question" (string) and "answer" (string, 2-4 sentences). No markdown, no explanation.`;
-      const result = await chatSession.sendMessage(prompt);
-      const raw = (await result.response.text()).replace(/```json/g, "").replace(/```/g, "").trim();
+      const raw = (await generateText(prompt)).replace(/```json/g, "").replace(/```/g, "").trim();
       setQuestions(JSON.parse(raw));
       setPage(nextPage);
       setGenerated(true);

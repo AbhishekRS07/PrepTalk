@@ -10,13 +10,8 @@ import {
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Textarea } from "../../../components/ui/textarea";
-import { chatSession } from "../../../lib/GorqAIModal";
-import { PrepTalk } from "../../../utils/schema";
 import { LoaderCircle, Plus, Sparkles } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@clerk/nextjs";
-import moment from "moment";
-import { db } from "../../../utils/db";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -35,44 +30,30 @@ const AddNewInterview = () => {
     setLoading(true);
     setError("");
 
-    let cleanedResponse = "";
     try {
-      const InputPrompt = `Job position: ${jobPosition}, Job Description: ${jobDesc}, Years of Experience: ${jobExperience}. Depending upon the job position, job description, and the years of experience, generate ${process.env.NEXT_PUBLIC_INTERVIEW_OUESTION_COUNT} interview questions along with the answers in JSON format. Provide "question" and "answer" fields in JSON.`;
+      const res = await fetch("/api/interview/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobPosition,
+          jobDesc,
+          jobExperience,
+          userEmail: user?.primaryEmailAddress?.emailAddress,
+        }),
+      });
 
-      const result = await chatSession.sendMessage(InputPrompt);
-      const rawResponse = await result.response.text();
+      const data = await res.json();
 
-      cleanedResponse = rawResponse
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate interview");
+      }
 
-      JSON.parse(cleanedResponse); // validate
+      setOpenDialog(false);
+      router.push("/dashboard/interview/" + data.mockId);
     } catch (err) {
       console.error("Error:", err);
       setError(err?.message || "Something went wrong. Please try again.");
     } finally {
-      if (cleanedResponse) {
-        const resp = await db
-          .insert(PrepTalk)
-          .values({
-            mockId: uuidv4(),
-            jsonMockResp: cleanedResponse,
-            jobPosition,
-            jobDesc,
-            jobexperience: jobExperience,
-            createdBy: user?.primaryEmailAddress?.emailAddress,
-            createdAt: moment().format("DD-MM-yyyy"),
-          })
-          .returning({ mockId: PrepTalk.mockId });
-
-        if (resp) {
-          setOpenDialog(false);
-          router.push("/dashboard/interview/" + resp[0]?.mockId);
-        }
-      } else if (!error) {
-        setError("Failed to generate questions. Please try again.");
-      }
       setLoading(false);
     }
   };

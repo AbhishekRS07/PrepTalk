@@ -1,10 +1,7 @@
 "use client";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
-import { PrepTalk } from "../../../utils/schema";
-import { desc, eq } from "drizzle-orm";
 import InterviewCard from "./InterviewCard";
-import { db } from "../../../utils/db";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
@@ -20,12 +17,11 @@ const InterviewList = () => {
 
   const GetInterviews = async () => {
     try {
-      const result = await db
-        .select()
-        .from(PrepTalk)
-        .where(eq(PrepTalk.createdBy, user?.primaryEmailAddress?.emailAddress))
-        .orderBy(desc(PrepTalk.id));
-      setInterviews(result);
+      const email = user?.primaryEmailAddress?.emailAddress;
+      const res = await fetch(`/api/interviews?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load interviews");
+      setInterviews(data);
     } catch (err) {
       console.error("Error fetching interviews:", err);
       setError("Failed to load interviews.");
