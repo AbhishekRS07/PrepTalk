@@ -1,55 +1,58 @@
-"use client"
-import { UserButton } from '@clerk/nextjs'
-import Image from 'next/image'
-import { usePathname } from 'next/navigation'
-import React, { useState, useEffect } from 'react'
-import { Menu, X } from 'lucide-react'
+"use client";
+import { UserButton } from "@clerk/nextjs";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { cn } from "@/lib/utils";
+
+const navLinks = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard/questions", label: "Questions" },
+  { href: "/dashboard/upgrade", label: "Upgrade" },
+  { href: "/dashboard/how", label: "How it works" },
+];
 
 const Header = () => {
-    const path = usePathname()
-    const [isOpen, setIsOpen] = useState(false)
+  const path = usePathname();
 
-    useEffect(() => {
-        console.log(path)
-    }, [path])
+  return (
+    <header className="sticky top-0 z-50 glass border-b border-border/50">
+      <div className="mx-5 md:mx-20 lg:mx-36 h-16 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <Image src="/logo.svg" width={32} height={32} alt="PrepTalk" />
+          <span className="font-bold text-base tracking-tight hidden sm:block">
+            PrepTalk
+          </span>
+        </Link>
 
-    const toggleMenu = () => {
-        setIsOpen(!isOpen)
-    }
+        {/* Nav */}
+        <nav className="hidden md:flex items-center gap-1">
+          {navLinks.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                path === href
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              )}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
 
-    return (
-        <div className='flex p-4 items-center justify-between bg-secondary shadow-md'>
-            <div className='md:hidden'>
-                <button onClick={toggleMenu} className='text-primary'>
-                    {isOpen ? <X size={28} /> : <Menu size={28} />}
-                </button>
-            </div>
-            <div className='hidden md:block'>
-                <Image src={"/logo.svg"} width={40} height={40} alt='logo' />
-            </div>
-            <ul className={`md:flex gap-8 items-center ${isOpen ? 'block' : 'hidden'} md:block absolute md:static bg-secondary top-16 left-0 w-full md:w-auto z-20 md:z-auto`}>
-                <li className={`font-medium cursor-pointer transition-all hover:text-primary ${path == '/dashboard' && 'text-primary font-bold relative text-lg'} p-4 md:p-0`}>
-                    Dashboard
-                    <span className='absolute bottom-0 left-0 w-full h-0.5 bg-primary transition-all group-hover:h-0.5'></span>
-                </li>
-                <li className={` font-medium cursor-pointer transition-all hover:text-primary ${path == '/dashboard/questions' && 'text-primary font-bold relative text-lg'} p-4 md:p-0`}>
-                    Questions
-                    <span className='absolute bottom-0 left-0 w-full h-0.5 bg-primary transition-all group-hover:h-0.5'></span>
-                </li>
-                <li className={` font-medium cursor-pointer transition-all hover:text-primary ${path == '/dashboard/upgrade' && 'text-primary font-bold relative text-lg'} p-4 md:p-0`}>
-                    Upgrade
-                    <span className='absolute bottom-0 left-0 w-full h-0.5 bg-primary transition-all group-hover:h-0.5'></span>
-                </li>
-                <li className={` font-medium cursor-pointer transition-all hover:text-primary ${path == '/dashboard/how' && 'text-primary font-bold relative text-lg'} p-4 md:p-0`}>
-                    How it works?
-                    <span className='absolute bottom-0 left-0 w-full h-0.5 bg-primary transition-all group-hover:h-0.5'></span>
-                </li>
-            </ul>
-            <div className='flex-shrink-0'>
-                <UserButton />
-            </div>
+        {/* Right */}
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <UserButton afterSignOutUrl="/" />
         </div>
-    )
-}
+      </div>
+    </header>
+  );
+};
 
-export default Header
+export default Header;

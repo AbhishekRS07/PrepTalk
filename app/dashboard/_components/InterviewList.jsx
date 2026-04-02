@@ -1,68 +1,81 @@
-"use client"
-
-import { useUser } from '@clerk/nextjs'
-import React, { useEffect, useState } from 'react'
-import { PrepTalk } from '../../../utils/schema'
-import { desc, eq } from 'drizzle-orm'
-import Interviewcard from "./InterviewCard"
-import { db } from '../../../utils/db'
+"use client";
+import { useUser } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
+import { PrepTalk } from "../../../utils/schema";
+import { desc, eq } from "drizzle-orm";
+import InterviewCard from "./InterviewCard";
+import { db } from "../../../utils/db";
+import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 
 const InterviewList = () => {
-  const { user } = useUser()
-  const [interviews, setInterviews] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const { user } = useUser();
+  const [interviews, setInterviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (user) {
-      GetInterviews()
-    }
-  }, [user])
+    if (user) GetInterviews();
+  }, [user]);
 
   const GetInterviews = async () => {
     try {
-      const result = await db.select()
+      const result = await db
+        .select()
         .from(PrepTalk)
         .where(eq(PrepTalk.createdBy, user?.primaryEmailAddress?.emailAddress))
-        .orderBy(desc(PrepTalk.id))
-
-      console.log(result)
-      setInterviews(result)
+        .orderBy(desc(PrepTalk.id));
+      setInterviews(result);
     } catch (err) {
-      console.error("Error fetching interviews:", err)
-      setError("Failed to load interviews")
+      console.error("Error fetching interviews:", err);
+      setError("Failed to load interviews.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleDelete = (mockId) => {
-    setInterviews(interviews.filter(interview => interview.mockId !== mockId));
+    setInterviews((prev) => prev.filter((i) => i.mockId !== mockId));
   };
 
   return (
     <div>
-      <h2 className='font-medium text-xl mb-4'>Previous Mock Interviews</h2>
+      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-4">
+        Previous Interviews
+      </h2>
 
       {loading ? (
-        <p>Loading interviews...</p>
-      ) : error ? (
-        <p className='text-red-500'>{error}</p>
-      ) : interviews.length === 0 ? (
-        <p>No interviews found.</p>
-      ) : (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5'>
-          {interviews.map((item, index) => (
-            <Interviewcard 
-              interview={item}
-              key={index} 
-              onDelete={handleDelete}
-              />
-          ))}
+        <div className="flex items-center gap-2 text-muted-foreground text-sm py-8">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading your interviews…
         </div>
+      ) : error ? (
+        <p className="text-sm text-destructive">{error}</p>
+      ) : interviews.length === 0 ? (
+        <div className="text-center py-16 border-2 border-dashed border-border rounded-2xl">
+          <p className="text-muted-foreground text-sm">No interviews yet.</p>
+          <p className="text-muted-foreground text-xs mt-1">Create your first one above to get started.</p>
+        </div>
+      ) : (
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: { transition: { staggerChildren: 0.07 } },
+          }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
+          {interviews.map((item) => (
+            <InterviewCard
+              key={item.mockId}
+              interview={item}
+              onDelete={handleDelete}
+            />
+          ))}
+        </motion.div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default InterviewList
+export default InterviewList;

@@ -1,86 +1,169 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import { db } from '../../../../utils/db';
-import { PrepTalk } from '../../../../utils/schema';
-import { eq } from 'drizzle-orm';
-import Webcam from 'react-webcam';
-import { Lightbulb, WebcamIcon } from 'lucide-react';
-import { Button } from '../../../../components/ui/button';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { db } from "../../../../utils/db";
+import { PrepTalk } from "../../../../utils/schema";
+import { eq } from "drizzle-orm";
+import Webcam from "react-webcam";
+import { Lightbulb, Video, VideoOff, ArrowRight, Briefcase, Clock, Code2 } from "lucide-react";
+import { Button } from "../../../../components/ui/button";
+import Link from "next/link";
+import { motion } from "framer-motion";
+
+const tips = [
+  "Speak clearly and at a natural pace.",
+  "Take a moment to think before answering — it's okay.",
+  "Structure answers with context, your action, and the result.",
+  "Be honest about what you know and don't know.",
+];
 
 const InterView = ({ params }) => {
-    const [interviewData, setInterviewData] = useState(null);
-    const [webcamEnable, setWebcamEnable] = useState(false);
+  const [interviewData, setInterviewData] = useState(null);
+  const [webcamEnabled, setWebcamEnabled] = useState(false);
 
-    useEffect(() => {
-        GetInterviewDetails();
-        // Check local storage for webcam state
-        const savedWebcamState = localStorage.getItem('webcamEnabled');
-        if (savedWebcamState === 'true') {
-            setWebcamEnable(true);
-        }
-    }, [params.interviewId]);
+  useEffect(() => {
+    GetInterviewDetails();
+    const saved = localStorage.getItem("webcamEnabled");
+    if (saved === "true") setWebcamEnabled(true);
+  }, [params.interviewId]);
 
-    const GetInterviewDetails = async () => {
-        const result = await db.select().from(PrepTalk)
-            .where(eq(PrepTalk.mockId, params.interviewId));
-        setInterviewData(result[0]);
-    };
+  const GetInterviewDetails = async () => {
+    const result = await db
+      .select()
+      .from(PrepTalk)
+      .where(eq(PrepTalk.mockId, params.interviewId));
+    setInterviewData(result[0]);
+  };
 
-    const handleEnableWebcam = () => {
-        setWebcamEnable(true);
-        localStorage.setItem('webcamEnabled', 'true'); // Save the webcam state
-    };
+  const handleEnableWebcam = () => {
+    setWebcamEnabled(true);
+    localStorage.setItem("webcamEnabled", "true");
+  };
 
-    return (
-        <div className='my-10 flex flex-col items-center'>
-            <h2 className='font-bold text-3xl mb-8 text-center'>Let's Get Started</h2>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-10 items-start w-full max-w-4xl'>
-                <div className='flex flex-col items-center'>
-                    {webcamEnable ? (
-                        <Webcam
-                            onUserMedia={() => setWebcamEnable(true)}
-                            onUserMediaError={() => setWebcamEnable(false)}
-                            mirrored={true}
-                            className="rounded-lg border shadow-lg"
-                            style={{ width: '100%', height: 'auto', maxWidth: '400px' }}
-                        />
-                    ) : (
-                        <div className='flex flex-col items-center'>
-                            <WebcamIcon className='h-64 w-full my-7 p-5 bg-secondary rounded-lg border' />
-                            <Button className="bg-primary" onClick={handleEnableWebcam}>
-                                Enable Webcam and Microphone
-                            </Button>
-                        </div>
-                    )}
-                    <Link href={'/dashboard/interview/'+params.interviewId+'/start'}>
-                        <Button className='mt-4'>Start Interview</Button>
-                    </Link>
+  const handleDisableWebcam = () => {
+    setWebcamEnabled(false);
+    localStorage.setItem("webcamEnabled", "false");
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto py-10 px-4">
+      {/* Page header */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-10 text-center"
+      >
+        <h1 className="text-3xl font-bold tracking-tight mb-2">Ready to practice?</h1>
+        <p className="text-muted-foreground">
+          Review your interview details and enable your camera before starting.
+        </p>
+      </motion.div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        {/* Left — Webcam */}
+        <motion.div
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex flex-col gap-4"
+        >
+          <div className="bg-card border border-border rounded-2xl overflow-hidden aspect-video flex items-center justify-center relative">
+            {webcamEnabled ? (
+              <Webcam
+                mirrored
+                onUserMediaError={handleDisableWebcam}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                <VideoOff className="h-12 w-12" />
+                <p className="text-sm">Camera is off</p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              variant={webcamEnabled ? "outline" : "default"}
+              className="flex-1 gap-2"
+              onClick={webcamEnabled ? handleDisableWebcam : handleEnableWebcam}
+            >
+              {webcamEnabled ? (
+                <><VideoOff className="h-4 w-4" /> Disable Camera</>
+              ) : (
+                <><Video className="h-4 w-4" /> Enable Camera & Mic</>
+              )}
+            </Button>
+            <Link href={`/dashboard/interview/${params.interviewId}/start`} className="flex-1">
+              <Button className="w-full gap-2">
+                Start Interview
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* Right — Details + Tips */}
+        <motion.div
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.15 }}
+          className="flex flex-col gap-4"
+        >
+          {/* Interview details */}
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+            <h2 className="font-semibold text-base">Interview Details</h2>
+            {interviewData ? (
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <Briefcase className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Role</p>
+                    <p className="text-sm font-medium">{interviewData.jobPosition}</p>
+                  </div>
                 </div>
-                
-                <div className='flex flex-col gap-6'>
-                    {interviewData ? (
-                        <div className='bg-white p-6 rounded-lg shadow-lg'>
-                            <h2 className='text-lg font-semibold mb-4'>Interview Details</h2>
-                            <p className='mb-2'><strong>Job Role/Position:</strong> {interviewData.jobPosition}</p>
-                            <p className='mb-2'><strong>Job Description/Tech Stack:</strong> {interviewData.jobDesc}</p>
-                            <p><strong>Job Experience:</strong> {interviewData.jobexperience}</p>
-                        </div>
-                    ) : (
-                        <div>Loading interview details...</div>
-                    )}
-                    
-                    <div className='bg-gray-100 p-6 rounded-lg shadow-md'>
-                        <div className='flex items-center mb-4'>
-                            <Lightbulb className='mr-2 text-yellow-500' />
-                            <h2 className='text-yellow-500 text-xl font-semibold'>Information</h2>
-                        </div>
-                        <p>{process.env.NEXT_PUBLIC_INFORMATION}</p>
-                    </div>
+                <div className="flex items-start gap-3">
+                  <Code2 className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Tech Stack</p>
+                    <p className="text-sm font-medium">{interviewData.jobDesc}</p>
+                  </div>
                 </div>
+                <div className="flex items-start gap-3">
+                  <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Experience</p>
+                    <p className="text-sm font-medium">{interviewData.jobexperience} years</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-4 bg-muted animate-pulse rounded" />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Tips */}
+          <div className="bg-accent border border-accent-foreground/10 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Lightbulb className="h-4 w-4 text-primary" />
+              <h2 className="font-semibold text-sm text-primary">Tips for a great session</h2>
             </div>
-        </div>
-    );
-}
+            <ul className="space-y-2">
+              {tips.map((tip, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <span className="text-primary font-bold mt-0.5">·</span>
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
 
 export default InterView;

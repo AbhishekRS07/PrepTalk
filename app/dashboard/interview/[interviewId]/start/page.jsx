@@ -1,18 +1,34 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { PrepTalk } from '../../../../../utils/schema';
-import { db } from '../../../../../utils/db';
-import { eq } from 'drizzle-orm';
-import QuestionsSection from './_components/QuestionsSection';
-import RecordAns from './_components/RecordAns';
-import { Button } from '../../../../../components/ui/button';
-import Link from 'next/link';
+import { useEffect, useRef, useState } from "react";
+import { PrepTalk } from "../../../../../utils/schema";
+import { db } from "../../../../../utils/db";
+import { eq } from "drizzle-orm";
+import dynamic from "next/dynamic";
+import QuestionsSection from "./_components/QuestionsSection";
+import { Button } from "../../../../../components/ui/button";
+import { useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight, CircleStop, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+
+// Prevent SSR — react-hook-speech-to-text accesses window at import time
+const RecordAns = dynamic(() => import("./_components/RecordAns"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+    </div>
+  ),
+});
 
 const StartInterview = ({ params }) => {
   const [interviewData, setInterviewData] = useState();
   const [prepTalks, setPrepTalks] = useState([]);
-  const [active, setActive] = useState(0); // State to manage the active question index
+  const [active, setActive] = useState(0);
+  const [ending, setEnding] = useState(false);
+  const [navigating, setNavigating] = useState(false);
+  const recordAnsRef = useRef();
+  const router = useRouter();
 
   useEffect(() => {
     GetInterviewDetails();
@@ -20,87 +36,152 @@ const StartInterview = ({ params }) => {
 
   const GetInterviewDetails = async () => {
     try {
-      const result = await db.select().from(PrepTalk)
+      const result = await db
+        .select()
+        .from(PrepTalk)
         .where(eq(PrepTalk.mockId, params.interviewId));
-      
+
       if (result.length > 0) {
-        const rawJsonMockResp = result[0].jsonMockResp;
-        console.log("Raw JSON Response:", rawJsonMockResp); // Log the raw JSON string
-  
-        // Clean up the JSON string if necessary
-        const cleanedResponse = rawJsonMockResp
-          .replace(/^[^{[]*/, '')  // Remove anything before the first `{` or `[`
-          .replace(/[^}\]]*$/, '')  // Remove anything after the last `}` or `]`
-          .trim();  // Remove leading/trailing whitespace
-  
-        // Add square brackets to make it a valid JSON array if needed
-        let validJsonResponse = cleanedResponse;
-  
-        if (!cleanedResponse.startsWith('[')) {
-          validJsonResponse = `[${cleanedResponse}]`;
-        }
-  
-        console.log("Cleaned JSON Response:", validJsonResponse); // Log the cleaned JSON string
-  
-        // Attempt to parse the JSON string
-        const jsonMockResp = JSON.parse(validJsonResponse);
-        console.log("Parsed JSON Response:", jsonMockResp);
-        
-        setPrepTalks(jsonMockResp);
+        const raw = result[0].jsonMockResp;
+        const cleaned = raw.replace(/^[^{[]*/, "").replace(/[^}\]]*$/, "").trim();
+        const valid = cleaned.startsWith("[") ? cleaned : `[${cleaned}]`;
+        setPrepTalks(JSON.parse(valid));
         setInterviewData(result[0]);
-      } else {
-        console.error('No interview data found for the given ID.');
       }
-    } catch (error) {
-      console.error('Error fetching interview details:', error);
+    } catch (err) {
+      console.error("Error fetching interview:", err);
     }
   };
 
-  const handleQuestionClick = (index) => {
-    setActive(index); // Update the active question index
+  // Save current answer then move to next question
+  const handleNext = async () => {
+    setNavigating(true);
+    if (recordAnsRef.current) {
+      await recordAnsRef.current.saveCurrentAnswer();
+    }
+    setActive((p) => p + 1);
+    setNavigating(false);
   };
 
+  const handlePrev = async () => {
+    setNavigating(true);
+    if (recordAnsRef.current) {
+      await recordAnsRef.current.saveCurrentAnswer();
+    }
+    setActive((p) => p - 1);
+    setNavigating(false);
+  };
+
+  const handleEndInterview = async () => {
+    setEnding(true);
+    if (recordAnsRef.current) {
+      await recordAnsRef.current.saveCurrentAnswer();
+    }
+    router.push("/dashboard/interview/" + interviewData?.mockId + "/feedback");
+  };
+
+  const progress = prepTalks.length
+    ? Math.round(((active + 1) / prepTalks.length) * 100)
+    : 0;
+
   return (
-    <div className="min-h-screen p-8">
-      <div className='flex justify-end gap-6'>
-        {active > 0 && (
-          <Button 
-            onClick={() => setActive(active - 1)} 
-            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg"
-          >
-            Previous Question
-          </Button>
-        )}
-        {active !== prepTalks?.length - 1 && (
-          <Button 
-            onClick={() => setActive(active + 1)} 
-            className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg"
-          >
-            Next Question
-          </Button>
-        )}
-        {active === prepTalks?.length - 1 && (
-          <Link href={'/dashboard/interview/' + interviewData?.mockId + "/feedback"}>
-            <Button 
-              className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg"
+    <div className="min-h-screen flex flex-col">
+      {/* Progress bar */}
+      <div className="sticky top-16 z-40 bg-background/80 backdrop-blur border-b border-border px-5 md:px-20 lg:px-36 py-3">
+        <div className="flex items-center justify-between gap-4 max-w-6xl mx-auto">
+          <div className="flex items-center gap-3 flex-1">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {active + 1} / {prepTalks.length}
+            </span>
+            <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-primary rounded-full"
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.3 }}
+              />
+            </div>
+            <span className="text-xs text-muted-foreground">{progress}%</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={active === 0 || navigating}
+              onClick={handlePrev}
+              className="gap-1"
             >
-              End Interview
+              <ChevronLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Prev</span>
             </Button>
-          </Link>
-        )}
+
+            {active < prepTalks.length - 1 ? (
+              <Button
+                size="sm"
+                onClick={handleNext}
+                disabled={navigating}
+                className="gap-1"
+              >
+                {navigating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleEndInterview}
+                disabled={ending}
+                className="gap-1.5"
+              >
+                {ending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <CircleStop className="h-4 w-4" />
+                    End Interview
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-10 bg-white shadow-lg p-6 rounded-lg'>
-        <QuestionsSection 
-          mockInterQuestion={prepTalks} 
-          active={active} 
-          onQuestionClick={handleQuestionClick}
-        />
-        <RecordAns 
-          mockInterQuestion={prepTalks} 
-          active={active} 
-          interviewData={interviewData} 
-        />
+      {/* Main */}
+      <div className="flex-1 px-5 md:px-20 lg:px-36 py-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <motion.div
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-card border border-border rounded-2xl p-6 min-h-80"
+          >
+            <QuestionsSection
+              mockInterQuestion={prepTalks}
+              active={active}
+              onQuestionClick={setActive}
+            />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.05 }}
+            className="bg-card border border-border rounded-2xl p-6"
+          >
+            <RecordAns
+              ref={recordAnsRef}
+              mockInterQuestion={prepTalks}
+              active={active}
+              interviewData={interviewData}
+            />
+          </motion.div>
+        </div>
       </div>
     </div>
   );
