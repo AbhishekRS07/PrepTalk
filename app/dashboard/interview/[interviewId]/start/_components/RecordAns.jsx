@@ -46,15 +46,17 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
   // Expose saveCurrentAnswer to parent
   useImperativeHandle(ref, () => ({
     saveCurrentAnswer: async () => {
+      // Capture answer text NOW before stopSpeechToText can clear internal state
+      const answerSnapshot = userAnswerRef.current;
       if (isRecording) stopSpeechToText();
-      if (userAnswerRef.current.trim().length > 10) {
-        await UpdateAnswer(activeRef.current);
+      if (answerSnapshot.trim().length > 10) {
+        await UpdateAnswer(activeRef.current, answerSnapshot);
       }
     },
   }));
 
-  const UpdateAnswer = async (questionIndex) => {
-    const answer = userAnswerRef.current.trim();
+  const UpdateAnswer = async (questionIndex, answer) => {
+    answer = answer.trim();
     const question = mockInterQuestion[questionIndex];
     if (!question || !answer) return;
 
