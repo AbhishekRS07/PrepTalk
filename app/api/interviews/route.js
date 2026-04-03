@@ -1,8 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
-import { db } from "@/utils/db";
-import { PrepTalk } from "@/utils/schema";
-import { eq, desc } from "drizzle-orm";
 
 export async function GET(request) {
   const supabase = createClient();
@@ -18,16 +15,15 @@ export async function GET(request) {
     return NextResponse.json({ error: "Missing email" }, { status: 400 });
   }
 
-  try {
-    const result = await db
-      .select()
-      .from(PrepTalk)
-      .where(eq(PrepTalk.createdBy, email))
-      .orderBy(desc(PrepTalk.id));
+  const { data, error } = await supabase
+    .from("preptalk")
+    .select("*")
+    .eq("createdBy", email)
+    .order("id", { ascending: false });
 
-    return NextResponse.json(result);
-  } catch (err) {
-    console.error("DB error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  return NextResponse.json(data);
 }

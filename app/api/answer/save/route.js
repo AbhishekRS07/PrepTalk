@@ -1,8 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { runPrompt } from "@/lib/langchain";
-import { db } from "@/utils/db";
-import { UserAnswer } from "@/utils/schema";
 import moment from "moment";
 
 export async function POST(request) {
@@ -28,8 +26,8 @@ export async function POST(request) {
   const parsed = JSON.parse(raw);
   const rating = String(parsed?.rating).replace(/[^0-9.]/g, "") || "0";
 
-  await db.insert(UserAnswer).values({
-    mockIdRef,
+  const { error } = await supabase.from("userAnswer").insert({
+    mockId: mockIdRef,
     question,
     correctAns,
     userAns,
@@ -38,6 +36,10 @@ export async function POST(request) {
     userEmail,
     createdAt: moment().format("DD-MM-yyyy"),
   });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true, rating, feedback: parsed?.feedback });
 }

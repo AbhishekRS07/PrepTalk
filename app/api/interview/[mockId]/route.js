@@ -1,8 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
-import { db } from "@/utils/db";
-import { PrepTalk } from "@/utils/schema";
-import { eq } from "drizzle-orm";
 
 export async function GET(request, { params }) {
   const supabase = createClient();
@@ -12,16 +9,18 @@ export async function GET(request, { params }) {
   }
 
   const { mockId } = params;
-  const result = await db
-    .select()
-    .from(PrepTalk)
-    .where(eq(PrepTalk.mockId, mockId));
 
-  if (result.length === 0) {
+  const { data, error } = await supabase
+    .from("preptalk")
+    .select("*")
+    .eq("mockId", mockId)
+    .single();
+
+  if (error) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json(result[0]);
+  return NextResponse.json(data);
 }
 
 export async function DELETE(request, { params }) {
@@ -32,7 +31,15 @@ export async function DELETE(request, { params }) {
   }
 
   const { mockId } = params;
-  await db.delete(PrepTalk).where(eq(PrepTalk.mockId, mockId));
+
+  const { error } = await supabase
+    .from("preptalk")
+    .delete()
+    .eq("mockId", mockId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }

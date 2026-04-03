@@ -1,8 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { runPrompt } from "@/lib/langchain";
-import { db } from "@/utils/db";
-import { PrepTalk } from "@/utils/schema";
 import { v4 as uuidv4 } from "uuid";
 import moment from "moment";
 
@@ -26,12 +24,11 @@ export async function POST(request) {
   const raw = await runPrompt(prompt);
   const cleaned = raw.replace(/```json/g, "").replace(/```/g, "").trim();
 
-  // Validate JSON
   JSON.parse(cleaned);
 
   const mockId = uuidv4();
 
-  await db.insert(PrepTalk).values({
+  const { error } = await supabase.from("preptalk").insert({
     mockId,
     jsonMockResp: cleaned,
     jobPosition,
@@ -40,6 +37,10 @@ export async function POST(request) {
     createdBy: userEmail,
     createdAt: moment().format("DD-MM-yyyy"),
   });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   return NextResponse.json({ mockId });
 }

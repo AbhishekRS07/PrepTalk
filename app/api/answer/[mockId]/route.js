@@ -1,8 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
-import { db } from "@/utils/db";
-import { UserAnswer } from "@/utils/schema";
-import { eq } from "drizzle-orm";
 
 export async function GET(request, { params }) {
   const supabase = createClient();
@@ -12,11 +9,16 @@ export async function GET(request, { params }) {
   }
 
   const { mockId } = params;
-  const result = await db
-    .select()
-    .from(UserAnswer)
-    .where(eq(UserAnswer.mockIdRef, mockId))
-    .orderBy(UserAnswer.id);
 
-  return NextResponse.json(result);
+  const { data, error } = await supabase
+    .from("userAnswer")
+    .select("*")
+    .eq("mockId", mockId)
+    .order("id", { ascending: true });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(data);
 }
