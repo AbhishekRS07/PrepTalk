@@ -18,11 +18,16 @@ export async function GET(request) {
     return NextResponse.json({ error: "Missing email" }, { status: 400 });
   }
 
-  const result = await db
-    .select()
-    .from(PrepTalk)
-    .where(eq(PrepTalk.createdBy, email))
-    .orderBy(desc(PrepTalk.id));
+  try {
+    const result = await db
+      .select()
+      .from(PrepTalk)
+      .where(eq(PrepTalk.createdBy, email))
+      .orderBy(desc(PrepTalk.id));
 
-  return NextResponse.json(result);
+    return NextResponse.json(result);
+  } catch (err) {
+    console.error("DB error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }
