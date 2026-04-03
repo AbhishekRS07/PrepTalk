@@ -1,22 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
 import QuestionsSection from "./_components/QuestionsSection";
+import RecordAns from "./_components/RecordAns";
 import { Button } from "../../../../../components/ui/button";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, CircleStop, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-
-// Prevent SSR — react-hook-speech-to-text accesses window at import time
-const RecordAns = dynamic(() => import("./_components/RecordAns"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-64">
-      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-    </div>
-  ),
-});
 
 const StartInterview = ({ params }) => {
   const [interviewData, setInterviewData] = useState();

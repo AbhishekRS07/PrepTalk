@@ -46,7 +46,6 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
   // Expose saveCurrentAnswer to parent
   useImperativeHandle(ref, () => ({
     saveCurrentAnswer: async () => {
-      // Capture answer text NOW before stopSpeechToText can clear internal state
       const answerSnapshot = userAnswerRef.current;
       if (isRecording) stopSpeechToText();
       if (answerSnapshot.trim().length > 10) {
@@ -74,12 +73,13 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to save answer");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to save answer");
 
       toast.success("Answer saved");
-      setResults([]);
       userAnswerRef.current = "";
       setUserAnswer("");
+      setResults([]);
     } catch (err) {
       console.error("UpdateAnswer error:", err);
       toast.error("Failed to save answer");
