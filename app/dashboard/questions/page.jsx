@@ -15,7 +15,12 @@ import {
   Terminal,
   CheckCircle2,
   XCircle,
+  MessageSquare,
+  Send,
+  Bot,
+  User,
 } from "lucide-react";
+import { useRef, useEffect } from "react";
 import { Button } from "../../../components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -107,6 +112,22 @@ function IDEPanel({ problem, onClose }) {
   const [output, setOutput] = useState(null);
   const [running, setRunning] = useState(false);
 
+  // ── AI Chat state ──────────────────────────────────────────────
+  const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      content: `Hey! I'm your AI hint assistant for **${problem.title}**. Ask me anything — I'll guide you with hints without giving away the full solution. 💡`,
+    },
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   const handleLangChange = (l) => { setLang(l); setCode(l.defaultCode); setOutput(null); setStdin(""); };
 
   const handleRun = async () => {
@@ -119,6 +140,54 @@ function IDEPanel({ problem, onClose }) {
     } finally { setRunning(false); }
   };
 
+  const handleChat = async (e) => {
+    e.preventDefault();
+    const userMsg = chatInput.trim();
+    if (!userMsg || chatLoading) return;
+
+    const newMessages = [...messages, { role: "user", content: userMsg }];
+    setMessages(newMessages);
+    setChatInput("");
+    setChatLoading(true);
+
+    try {
+      const history = newMessages
+        .slice(-6) // last 3 turns for context
+        .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
+        .join("\n");
+
+      const prompt = `You are an AI coding assistant embedded in a DSA practice IDE. Your job is to help the user solve problems through hints and guidance — NEVER give the full working solution unless the user explicitly asks for it multiple times.
+
+Problem: ${problem.title}
+Description: ${problem.description}
+Difficulty: ${problem.difficulty}
+Constraints: ${problem.constraints?.join(", ") || "none"}
+Language: ${lang.label}
+
+User's current code:
+\`\`\`${lang.value}
+${code}
+\`\`\`
+
+Conversation so far:
+${history}
+
+Respond helpfully in 2-4 sentences. Give hints, explain concepts, point out bugs without fixing them outright, or suggest an approach. Keep it concise and encouraging.`;
+
+      const res = await fetch("/api/questions/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await res.json();
+      setMessages((prev) => [...prev, { role: "assistant", content: data.text || "Sorry, I couldn't generate a response." }]);
+    } catch {
+      setMessages((prev) => [...prev, { role: "assistant", content: "Something went wrong. Please try again." }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
   const stdout   = output?.program_output || output?.program_message || "";
   const stderr   = output?.compiler_error || output?.program_error   || "";
   const exitCode = output ? parseInt(output?.status ?? "0") : null;
@@ -126,6 +195,7 @@ function IDEPanel({ problem, onClose }) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* ── Header ── */}
       <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <Code2 className="h-4 w-4 text-primary shrink-0" />
@@ -149,13 +219,28 @@ function IDEPanel({ problem, onClose }) {
             {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
             {running ? "Running…" : "Run"}
           </Button>
+          {/* AI Chat toggle */}
+          <button
+            onClick={() => setChatOpen((p) => !p)}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
+              chatOpen
+                ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
+                : "bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+            )}
+          >
+            <Bot className="h-3.5 w-3.5" />
+            AI Hint
+          </button>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
       </div>
 
+      {/* ── Body ── */}
       <div className="flex flex-1 min-h-0 divide-x divide-border">
+        {/* Problem description */}
         <div className="w-2/5 overflow-y-auto p-5 space-y-4 text-sm">
           <div>
             <h2 className="font-bold text-base mb-1">{problem.title}</h2>
@@ -193,6 +278,7 @@ function IDEPanel({ problem, onClose }) {
           )}
         </div>
 
+        {/* Editor + output */}
         <div className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 min-h-0">
             <MonacoEditor height="100%" language={lang.value === "c++" ? "cpp" : lang.value}
@@ -226,6 +312,98 @@ function IDEPanel({ problem, onClose }) {
             </div>
           </div>
         </div>
+
+        {/* ── AI Chat Panel ── */}
+        <AnimatePresence>
+          {chatOpen && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 320, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="flex flex-col min-h-0 overflow-hidden bg-card border-l border-border shrink-0"
+            >
+              {/* Chat header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-full bg-primary/15 flex items-center justify-center">
+                    <Bot className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold">AI Hint Assistant</p>
+                    <p className="text-[10px] text-muted-foreground">Powered by Groq · hints only</p>
+                  </div>
+                </div>
+                <button onClick={() => setChatOpen(false)} className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {messages.map((msg, i) => (
+                  <div key={i} className={cn("flex gap-2", msg.role === "user" ? "flex-row-reverse" : "flex-row")}>
+                    <div className={cn("shrink-0 h-6 w-6 rounded-full flex items-center justify-center mt-0.5",
+                      msg.role === "user" ? "bg-primary/20" : "bg-primary/10")}>
+                      {msg.role === "user"
+                        ? <User className="h-3 w-3 text-primary" />
+                        : <Bot className="h-3 w-3 text-primary" />
+                      }
+                    </div>
+                    <div className={cn("max-w-[82%] rounded-2xl px-3 py-2 text-xs leading-relaxed",
+                      msg.role === "user"
+                        ? "bg-primary text-primary-foreground rounded-tr-sm"
+                        : "bg-secondary text-foreground rounded-tl-sm"
+                    )}>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div className="flex gap-2">
+                    <div className="shrink-0 h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
+                      <Bot className="h-3 w-3 text-primary" />
+                    </div>
+                    <div className="bg-secondary rounded-2xl rounded-tl-sm px-3 py-2.5 flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:0ms]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:150ms]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:300ms]" />
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Quick prompts */}
+              {messages.length === 1 && (
+                <div className="px-3 pb-2 flex flex-wrap gap-1.5">
+                  {["Give me a hint", "What approach should I use?", "Why is my code wrong?"].map((q) => (
+                    <button key={q} onClick={() => setChatInput(q)}
+                      className="text-[10px] px-2.5 py-1 rounded-full border border-border bg-secondary/60 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors">
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Input */}
+              <form onSubmit={handleChat} className="flex items-end gap-2 p-3 border-t border-border shrink-0">
+                <textarea
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleChat(e); } }}
+                  placeholder="Ask for a hint…"
+                  rows={2}
+                  className="flex-1 text-xs bg-secondary/50 border border-border rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-primary/40 leading-relaxed"
+                />
+                <button type="submit" disabled={!chatInput.trim() || chatLoading}
+                  className="h-8 w-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 disabled:opacity-40 hover:bg-primary/90 transition-colors">
+                  <Send className="h-3.5 w-3.5" />
+                </button>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
