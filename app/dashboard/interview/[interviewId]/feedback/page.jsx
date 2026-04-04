@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../../../../../components/ui/button";
 import {
@@ -182,7 +182,8 @@ function FeedbackItem({ item, index }) {
 }
 
 // ── Page ───────────────────────────────────────────────────────
-const Feedback = ({ params }) => {
+const Feedback = () => {
+  const params = useParams();
   const [feedbackList, setFeedbackList] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
   const [loading, setLoading] = useState(true);

@@ -1,7 +1,9 @@
 "use client";
 
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import dynamic from "next/dynamic";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -15,21 +17,28 @@ import {
   CheckCircle2,
   Sparkles,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
+
+// Load 3D canvas only on client — no SSR
+const HeroCanvas = dynamic(() => import("@/components/HeroCanvas"), {
+  ssr: false,
+  loading: () => null,
+});
 
 // ── Animation Variants ─────────────────────────────────────────
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 32 },
   visible: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, delay: i * 0.1, ease: "easeOut" },
+    transition: { duration: 0.6, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] },
   }),
 };
 
 const fadeIn = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.6 } },
+  visible: { opacity: 1, transition: { duration: 0.7 } },
 };
 
 // ── Data ───────────────────────────────────────────────────────
@@ -62,9 +71,21 @@ const features = [
 ];
 
 const steps = [
-  { num: "01", title: "Create an interview", desc: "Enter your job role, tech stack, and years of experience." },
-  { num: "02", title: "Answer the questions", desc: "Record your answers question by question at your own pace." },
-  { num: "03", title: "Review your feedback", desc: "See AI-rated answers and specific tips to sharpen your skills." },
+  {
+    num: "01",
+    title: "Create an interview",
+    desc: "Enter your job role, tech stack, and years of experience.",
+  },
+  {
+    num: "02",
+    title: "Answer the questions",
+    desc: "Record your answers question by question at your own pace.",
+  },
+  {
+    num: "03",
+    title: "Review your feedback",
+    desc: "See AI-rated answers and specific tips to sharpen your skills.",
+  },
 ];
 
 const stats = [
@@ -74,13 +95,13 @@ const stats = [
   { value: "100%", label: "Free to use" },
 ];
 
-// ── Components ─────────────────────────────────────────────────
+// ── Navbar ─────────────────────────────────────────────────────
 function Navbar({ onGetStarted }) {
   return (
     <motion.nav
       initial={{ opacity: 0, y: -16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.5 }}
       className="fixed top-0 inset-x-0 z-50 glass border-b border-border/50"
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -90,13 +111,19 @@ function Navbar({ onGetStarted }) {
         </div>
 
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-          <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-          <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>
+          <a href="#features" className="hover:text-foreground transition-colors">
+            Features
+          </a>
+          <a href="#how-it-works" className="hover:text-foreground transition-colors">
+            How it works
+          </a>
         </div>
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button variant="ghost" size="sm" onClick={onGetStarted}>Sign in</Button>
+          <Button variant="ghost" size="sm" onClick={onGetStarted}>
+            Sign in
+          </Button>
           <Button size="sm" onClick={onGetStarted} className="gap-1">
             Get started <ChevronRight className="h-3.5 w-3.5" />
           </Button>
@@ -106,19 +133,47 @@ function Navbar({ onGetStarted }) {
   );
 }
 
+// ── Hero ───────────────────────────────────────────────────────
 function Hero({ onGetStarted }) {
+  const { scrollY } = useScroll();
+
+  // 3D canvas drifts down slower than scroll — creates parallax depth
+  const canvasY = useTransform(scrollY, [0, 900], [0, 260]);
+  // Content floats upward on scroll
+  const contentY = useTransform(scrollY, [0, 900], [0, -90]);
+  // Entire hero fades as user scrolls away
+  const heroOpacity = useTransform(scrollY, [0, 500], [1, 0]);
+
   return (
-    <section className="min-h-screen flex items-center justify-center px-6 pt-24 pb-16">
-      <div className="max-w-4xl mx-auto text-center">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* ── 3D Canvas (parallax layer) ── */}
+      <motion.div style={{ y: canvasY }} className="absolute inset-0">
+        <HeroCanvas />
+
+        {/* Bottom fade — seamless transition to next section */}
+        <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+
+        {/* Top-left glow blob */}
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-violet-600/8 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Top-right glow blob */}
+        <div className="absolute top-1/3 -right-20 w-80 h-80 bg-indigo-600/8 rounded-full blur-3xl pointer-events-none" />
+      </motion.div>
+
+      {/* ── Hero Content (parallax layer 2) ── */}
+      <motion.div
+        style={{ y: contentY, opacity: heroOpacity }}
+        className="relative z-10 max-w-5xl mx-auto text-center px-6 pt-28 pb-20"
+      >
         {/* Badge */}
         <motion.div
           variants={fadeUp}
           initial="hidden"
           animate="visible"
           custom={0}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent text-accent-foreground text-sm font-medium mb-8"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/8 text-sm font-medium mb-8 backdrop-blur-sm"
         >
-          <Sparkles className="h-3.5 w-3.5" />
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
           AI-powered mock interviews
         </motion.div>
 
@@ -128,11 +183,12 @@ function Hero({ onGetStarted }) {
           initial="hidden"
           animate="visible"
           custom={1}
-          className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6"
+          className="text-5xl md:text-8xl font-black tracking-tight leading-[1.05] mb-6"
         >
           Ace your next{" "}
           <span className="gradient-text">interview</span>
-          <br />with AI practice
+          <br />
+          with AI practice
         </motion.h1>
 
         {/* Subheadline */}
@@ -141,7 +197,7 @@ function Hero({ onGetStarted }) {
           initial="hidden"
           animate="visible"
           custom={2}
-          className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
+          className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed"
         >
           PrepTalk generates custom interview questions for your role, records
           your answers, and gives you instant AI feedback — so you walk into
@@ -156,11 +212,24 @@ function Hero({ onGetStarted }) {
           custom={3}
           className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
         >
-          <Button size="lg" onClick={onGetStarted} className="gap-2 px-8 h-12 text-base shadow-lg shadow-primary/25">
+          <Button
+            size="lg"
+            onClick={onGetStarted}
+            className="gap-2 px-9 h-13 text-base shadow-2xl shadow-primary/30 glow-primary"
+          >
             Start practicing free
             <ArrowRight className="h-4 w-4" />
           </Button>
-          <Button size="lg" variant="outline" onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })} className="h-12 text-base">
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() =>
+              document
+                .getElementById("how-it-works")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
+            className="h-13 text-base border-border/60 backdrop-blur-sm"
+          >
             See how it works
           </Button>
         </motion.div>
@@ -170,52 +239,163 @@ function Hero({ onGetStarted }) {
           variants={fadeIn}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto"
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto"
         >
           {stats.map((s) => (
-            <div key={s.label} className="flex flex-col items-center gap-1">
-              <span className="text-3xl font-bold gradient-text">{s.value}</span>
+            <div
+              key={s.label}
+              className="flex flex-col items-center gap-1.5 py-4 px-3 rounded-2xl bg-background/50 backdrop-blur-sm border border-border/40"
+            >
+              <span className="text-3xl font-black gradient-text">{s.value}</span>
               <span className="text-xs text-muted-foreground">{s.label}</span>
             </div>
           ))}
         </motion.div>
-      </div>
+      </motion.div>
+
+      {/* ── Scroll Indicator ── */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2.2 }}
+        style={{ opacity: heroOpacity }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 text-muted-foreground/60"
+      >
+        <span className="text-xs tracking-wide">Scroll to explore</span>
+        <motion.div
+          animate={{ y: [0, 7, 0] }}
+          transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+        >
+          <ChevronDown className="h-4 w-4" />
+        </motion.div>
+      </motion.div>
     </section>
   );
 }
 
-function Features() {
+// ── Feature Card (3D tilt on hover) ───────────────────────────
+const cardEntrance = {
+  hidden: { opacity: 0, y: 48, scale: 0.94 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.55,
+      delay: i * 0.1,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  }),
+};
+
+function FeatureCard({ feature, index }) {
+  const cardRef = useRef(null);
+
+  const handleMouseMove = (e) => {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 16;
+    const y = ((e.clientY - rect.top) / rect.height - 0.5) * -16;
+    el.style.transform = `perspective(900px) rotateX(${y}deg) rotateY(${x}deg) translateY(-6px) translateZ(10px)`;
+    el.style.transition = "none";
+  };
+
+  const handleMouseLeave = () => {
+    const el = cardRef.current;
+    if (!el) return;
+    el.style.transform = "";
+    el.style.transition = "transform 0.55s cubic-bezier(0.22,1,0.36,1)";
+  };
+
   return (
-    <section id="features" className="py-24 px-6 bg-secondary/40">
-      <div className="max-w-6xl mx-auto">
+    <motion.div
+      variants={cardEntrance}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-60px" }}
+      custom={index}
+      className="group relative h-full"
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Hover glow halo */}
+      <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/25 via-violet-500/15 to-transparent blur-sm -z-10 pointer-events-none" />
+
+      {/* Card */}
+      <div className="relative h-full bg-card border border-border rounded-2xl p-8 group-hover:border-primary/40 transition-colors duration-300 overflow-hidden cursor-default">
+        {/* Shimmer sweep */}
+        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none" />
+
+        {/* Icon — scale + rotate on hover via CSS */}
+        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/20 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 ease-out">
+          <feature.icon className="h-6 w-6 text-primary" />
+        </div>
+
+        <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+        <p className="text-muted-foreground leading-relaxed text-sm">{feature.desc}</p>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Features Section ───────────────────────────────────────────
+function Features() {
+  const sectionRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
+
+  // Decorative blobs move horizontally on scroll (parallax)
+  const blobRightX = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
+  const blobLeftX = useTransform(scrollYProgress, [0, 1], ["8%", "-8%"]);
+
+  return (
+    <section
+      ref={sectionRef}
+      id="features"
+      className="relative py-32 px-6 overflow-hidden"
+    >
+      {/* Dot grid background */}
+      <div className="absolute inset-0 dot-grid opacity-40 dark:opacity-20 pointer-events-none" />
+
+      {/* Parallax glow blobs */}
+      <motion.div
+        style={{ x: blobRightX }}
+        className="absolute -right-40 top-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-primary/6 rounded-full blur-[80px] pointer-events-none"
+      />
+      <motion.div
+        style={{ x: blobLeftX }}
+        className="absolute -left-40 top-1/3 w-[360px] h-[360px] bg-violet-600/6 rounded-full blur-[80px] pointer-events-none"
+      />
+
+      <div className="max-w-6xl mx-auto relative">
+        {/* Section header */}
         <motion.div
           variants={fadeUp}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-20"
         >
-          <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">Features</p>
-          <h2 className="text-4xl font-bold tracking-tight">Everything you need to prepare</h2>
+          <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
+            Features
+          </p>
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+            Everything you need to prepare
+          </h2>
+          <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed">
+            One platform, five powerful tools to transform how you practice for
+            technical interviews.
+          </p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Feature cards grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              variants={fadeUp}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              custom={i}
-              className="bg-card border border-border rounded-2xl p-8 hover:shadow-lg hover:shadow-primary/5 transition-shadow"
-            >
-              <div className="h-12 w-12 rounded-xl bg-accent flex items-center justify-center mb-5">
-                <f.icon className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
-              <p className="text-muted-foreground leading-relaxed text-sm">{f.desc}</p>
-            </motion.div>
+            <FeatureCard key={f.title} feature={f} index={i} />
           ))}
         </div>
       </div>
@@ -223,22 +403,50 @@ function Features() {
   );
 }
 
+// ── How It Works ───────────────────────────────────────────────
 function HowItWorks({ onGetStarted }) {
+  const sectionRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
+
+  // Background glow parallax
+  const bgGlowY = useTransform(scrollYProgress, [0, 1], ["0%", "25%"]);
+
   return (
-    <section id="how-it-works" className="py-24 px-6">
-      <div className="max-w-6xl mx-auto">
+    <section
+      ref={sectionRef}
+      id="how-it-works"
+      className="relative py-32 px-6 overflow-hidden bg-secondary/25"
+    >
+      {/* Parallax glow */}
+      <motion.div
+        style={{ y: bgGlowY }}
+        className="absolute inset-0 pointer-events-none"
+      >
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-primary/5 rounded-full blur-[120px]" />
+      </motion.div>
+
+      <div className="max-w-6xl mx-auto relative">
+        {/* Section header */}
         <motion.div
           variants={fadeUp}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-20"
         >
-          <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">How it works</p>
-          <h2 className="text-4xl font-bold tracking-tight">Three steps to interview-ready</h2>
+          <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
+            How it works
+          </p>
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
+            Three steps to interview&#8209;ready
+          </h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
+        {/* Steps */}
+        <div className="grid md:grid-cols-3 gap-10 mb-20">
           {steps.map((s, i) => (
             <motion.div
               key={s.num}
@@ -246,55 +454,72 @@ function HowItWorks({ onGetStarted }) {
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
-              custom={i}
-              className="relative"
+              custom={i * 0.8}
+              className="flex flex-col items-center md:items-start text-center md:text-left"
             >
-              <span className="text-7xl font-black text-border select-none">{s.num}</span>
-              <div className="-mt-4">
-                <h3 className="text-lg font-semibold mb-2">{s.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
+              {/* Number badge */}
+              <div className="mb-6 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20">
+                <span className="text-xl font-black text-primary">{s.num}</span>
               </div>
+              <h3 className="text-xl font-semibold mb-3">{s.title}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                {s.desc}
+              </p>
             </motion.div>
           ))}
         </div>
 
-        {/* What you get checklist */}
+        {/* CTA checklist box */}
         <motion.div
           variants={fadeUp}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="bg-accent rounded-3xl p-10 flex flex-col md:flex-row items-center justify-between gap-8"
+          className="relative rounded-3xl overflow-hidden border border-primary/20 bg-gradient-to-br from-primary/8 via-primary/4 to-transparent p-10 md:p-14"
         >
-          <div>
-            <h3 className="text-2xl font-bold mb-4">What you get with every session</h3>
-            <ul className="space-y-3">
-              {[
-                "Tailored mock interview questions for your exact role",
-                "Real-time speech-to-text transcription",
-                "Per-answer AI rating out of 10",
-                "Specific improvement suggestions",
-                "Full feedback report with model answers",
-                "Interview Q&A bank by profile & experience",
-                "DSA problems with built-in IDE & code execution",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-3 text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+          {/* Corner glow */}
+          <div className="absolute top-0 right-0 w-72 h-72 bg-primary/12 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-violet-600/8 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+
+          <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-10">
+            <div>
+              <h3 className="text-2xl md:text-3xl font-bold mb-6">
+                What you get with every session
+              </h3>
+              <ul className="space-y-3">
+                {[
+                  "Tailored mock interview questions for your exact role",
+                  "Real-time speech-to-text transcription",
+                  "Per-answer AI rating out of 10",
+                  "Specific improvement suggestions",
+                  "Full feedback report with model answers",
+                  "Interview Q&A bank by profile & experience",
+                  "DSA problems with built-in IDE & code execution",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-sm">
+                    <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <Button
+              size="lg"
+              onClick={onGetStarted}
+              className="gap-2 px-9 h-13 text-base shadow-2xl shadow-primary/30 glow-primary flex-shrink-0"
+            >
+              Try it now — it&apos;s free
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </div>
-          <Button size="lg" onClick={onGetStarted} className="gap-2 px-8 h-12 text-base shadow-lg shadow-primary/25 flex-shrink-0">
-            Try it now — it's free
-            <ArrowRight className="h-4 w-4" />
-          </Button>
         </motion.div>
       </div>
     </section>
   );
 }
 
+// ── Footer ─────────────────────────────────────────────────────
 function Footer() {
   return (
     <footer className="border-t border-border py-10 px-6">
@@ -304,11 +529,19 @@ function Footer() {
           <span className="font-semibold text-sm">PrepTalk</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          © {new Date().getFullYear()} PrepTalk. Built with AI to help you land your dream job.
+          © {new Date().getFullYear()} PrepTalk. Built with AI to help you land
+          your dream job.
         </p>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-          <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>
+          <a href="#features" className="hover:text-foreground transition-colors">
+            Features
+          </a>
+          <a
+            href="#how-it-works"
+            className="hover:text-foreground transition-colors"
+          >
+            How it works
+          </a>
         </div>
       </div>
     </footer>

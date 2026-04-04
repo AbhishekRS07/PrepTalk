@@ -61,16 +61,33 @@ const AddNewInterview = () => {
   return (
     <>
       <motion.div
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        whileTap={{ scale: 0.97 }}
         onClick={() => setOpenDialog(true)}
-        className="group border-2 border-dashed border-border rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary hover:bg-accent transition-all duration-200"
+        className="group border-2 border-dashed border-border rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary hover:bg-accent transition-all duration-300"
       >
-        <div className="h-12 w-12 rounded-xl bg-accent group-hover:bg-primary/10 flex items-center justify-center transition-colors">
-          <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+        {/* Icon with pulsing ring */}
+        <div className="relative">
+          {/* Pulse ring */}
+          <motion.div
+            animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0, 0.4] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-0 rounded-xl bg-primary/20 pointer-events-none"
+          />
+          <div className="relative h-12 w-12 rounded-xl bg-accent group-hover:bg-primary/10 flex items-center justify-center transition-colors duration-300">
+            <motion.div
+              animate={{ rotate: [0, 0, 90, 90, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", times: [0, 0.4, 0.5, 0.9, 1] }}
+            >
+              <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors duration-300" />
+            </motion.div>
+          </div>
         </div>
+
         <div className="text-center">
-          <p className="font-semibold text-sm group-hover:text-primary transition-colors">
+          <p className="font-semibold text-sm group-hover:text-primary transition-colors duration-300">
             New Interview
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">

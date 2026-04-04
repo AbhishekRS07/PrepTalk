@@ -5,6 +5,11 @@ import InterviewCard from "./InterviewCard";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
+const listVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+};
+
 const InterviewList = () => {
   const { user } = useAuth();
   const [interviews, setInterviews] = useState([]);
@@ -36,29 +41,41 @@ const InterviewList = () => {
 
   return (
     <div>
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-4">
+      <motion.h2
+        initial={{ opacity: 0, x: -12 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-4"
+      >
         Previous Interviews
-      </h2>
+      </motion.h2>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-muted-foreground text-sm py-8">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center gap-2 text-muted-foreground text-sm py-8"
+        >
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading your interviews…
-        </div>
+        </motion.div>
       ) : error ? (
         <p className="text-sm text-destructive">{error}</p>
       ) : interviews.length === 0 ? (
-        <div className="text-center py-16 border-2 border-dashed border-border rounded-2xl">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+          className="text-center py-16 border-2 border-dashed border-border rounded-2xl"
+        >
           <p className="text-muted-foreground text-sm">No interviews yet.</p>
           <p className="text-muted-foreground text-xs mt-1">Create your first one above to get started.</p>
-        </div>
+        </motion.div>
       ) : (
         <motion.div
+          variants={listVariants}
           initial="hidden"
           animate="visible"
-          variants={{
-            visible: { transition: { staggerChildren: 0.07 } },
-          }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         >
           {interviews.map((item) => (

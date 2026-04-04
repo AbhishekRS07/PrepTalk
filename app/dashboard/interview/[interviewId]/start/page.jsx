@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import QuestionsSection from "./_components/QuestionsSection";
 import RecordAns from "./_components/RecordAns";
 import { Button } from "../../../../../components/ui/button";
@@ -8,7 +9,8 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, CircleStop, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
-const StartInterview = ({ params }) => {
+const StartInterview = () => {
+  const params = useParams();
   const [interviewData, setInterviewData] = useState();
   const [prepTalks, setPrepTalks] = useState([]);
   const [active, setActive] = useState(0);

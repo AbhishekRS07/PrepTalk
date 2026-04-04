@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Webcam from "react-webcam";
 import { Lightbulb, Video, VideoOff, ArrowRight, Briefcase, Clock, Code2 } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
@@ -13,7 +14,8 @@ const tips = [
   "Be honest about what you know and don't know.",
 ];
 
-const InterView = ({ params }) => {
+const InterView = () => {
+  const params = useParams();
   const [interviewData, setInterviewData] = useState(null);
   const [webcamEnabled, setWebcamEnabled] = useState(false);
 

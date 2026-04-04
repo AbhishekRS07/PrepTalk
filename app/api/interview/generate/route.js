@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import moment from "moment";
 
 export async function POST(request) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -4,11 +4,22 @@ import AddNewInterview from "./_components/AddNewInterview";
 import InterviewList from "./_components/InterviewList";
 import { useAuth } from "@/context/AuthContext";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.4, delay: i * 0.1, ease: "easeOut" },
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12, delayChildren: 0.05 } },
+};
+
+const lineVariants = {
+  hidden: { opacity: 0, y: 18 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+};
+
+const sectionVariants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] },
   }),
 };
 
@@ -21,15 +32,34 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-10">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
-        <p className="text-sm text-muted-foreground mb-1">Welcome back, {firstName} 👋</p>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
+      {/* ── Header — staggered lines ── */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative"
+      >
+        {/* Decorative glow */}
+        <div className="absolute -top-8 -left-8 w-64 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
+        <motion.p variants={lineVariants} className="text-sm text-muted-foreground mb-1">
+          Welcome back, {firstName} 👋
+        </motion.p>
+        <motion.h1 variants={lineVariants} className="text-3xl font-bold tracking-tight">
+          Dashboard
+        </motion.h1>
+        <motion.p variants={lineVariants} className="text-muted-foreground mt-1">
           Create a new mock interview or continue practicing from where you left off.
-        </p>
+        </motion.p>
       </motion.div>
 
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}>
+      {/* ── New Interview ── */}
+      <motion.div
+        variants={sectionVariants}
+        initial="hidden"
+        animate="visible"
+        custom={2}
+      >
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-4">
           New Interview
         </h2>
@@ -38,7 +68,13 @@ const Dashboard = () => {
         </div>
       </motion.div>
 
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}>
+      {/* ── Interview List ── */}
+      <motion.div
+        variants={sectionVariants}
+        initial="hidden"
+        animate="visible"
+        custom={3}
+      >
         <InterviewList />
       </motion.div>
     </div>
