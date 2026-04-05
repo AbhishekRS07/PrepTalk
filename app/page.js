@@ -18,6 +18,8 @@ import {
   Sparkles,
   ChevronRight,
   ChevronDown,
+  FileText,
+  TrendingUp,
 } from "lucide-react";
 
 // Load 3D canvas only on client — no SSR
@@ -45,18 +47,23 @@ const fadeIn = {
 const features = [
   {
     icon: Brain,
-    title: "AI-Generated Questions",
-    desc: "Questions tailored to your role, tech stack, and experience level — powered by Llama 3.",
+    title: "AI Mock Interviews",
+    desc: "Questions tailored to your role, tech stack, and experience level — answered by voice or text with instant AI feedback.",
   },
   {
     icon: Mic,
-    title: "Voice Recording",
-    desc: "Answer naturally using your microphone. Your speech is transcribed in real time.",
+    title: "Live AI Interviewer",
+    desc: "Have a real back-and-forth conversation with an AI that probes weak answers, asks follow-ups, and adapts in real time.",
   },
   {
-    icon: BarChart3,
-    title: "Instant Feedback",
-    desc: "Get a rating and actionable improvement tips for every answer, right after the interview.",
+    icon: FileText,
+    title: "Resume-based Questions",
+    desc: "Upload your resume and get questions grounded in your actual projects, companies, and skills — not generic prompts.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Progress Analytics",
+    desc: "Track your scores across all interview formats over time. See which roles and topics you're strongest in.",
   },
   {
     icon: BookOpen,
@@ -73,18 +80,18 @@ const features = [
 const steps = [
   {
     num: "01",
-    title: "Create an interview",
-    desc: "Enter your job role, tech stack, and years of experience.",
+    title: "Choose your format",
+    desc: "Pick from Mock Interview, Live AI Interviewer, or Resume-based — each designed for a different practice style.",
   },
   {
     num: "02",
-    title: "Answer the questions",
-    desc: "Record your answers question by question at your own pace.",
+    title: "Practice like it's real",
+    desc: "Answer by voice or text. The AI asks follow-ups, probes weak spots, and keeps the conversation natural.",
   },
   {
     num: "03",
-    title: "Review your feedback",
-    desc: "See AI-rated answers and specific tips to sharpen your skills.",
+    title: "Get your debrief",
+    desc: "Receive a full breakdown — scores, strengths, areas to improve, and topic-by-topic ratings.",
   },
 ];
 
@@ -199,9 +206,9 @@ function Hero({ onGetStarted }) {
           custom={2}
           className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed"
         >
-          PrepTalk generates custom interview questions for your role, records
-          your answers, and gives you instant AI feedback — so you walk into
-          every interview fully prepared.
+          Mock interviews, live AI conversations, and resume-tailored questions
+          — all with instant feedback so you walk into every interview
+          fully prepared.
         </motion.p>
 
         {/* CTAs */}
@@ -387,7 +394,7 @@ function Features() {
             Everything you need to prepare
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            One platform, five powerful tools to transform how you practice for
+            One platform, six powerful tools to transform how you practice for
             technical interviews.
           </p>
         </motion.div>
@@ -488,11 +495,11 @@ function HowItWorks({ onGetStarted }) {
               </h3>
               <ul className="space-y-3">
                 {[
-                  "Tailored mock interview questions for your exact role",
-                  "Real-time speech-to-text transcription",
-                  "Per-answer AI rating out of 10",
-                  "Specific improvement suggestions",
-                  "Full feedback report with model answers",
+                  "Mock interviews tailored to your role, stack, and experience",
+                  "Live AI interviewer that probes and follows up in real time",
+                  "Resume-based questions grounded in your actual experience",
+                  "Progress analytics across all interview formats",
+                  "Per-answer AI rating out of 10 with improvement tips",
                   "Interview Q&A bank by profile & experience",
                   "DSA problems with built-in IDE & code execution",
                 ].map((item) => (

@@ -10,7 +10,7 @@ const plans = [
     name: "Free",
     price: "₹0",
     period: "forever",
-    description: "Perfect for getting started with AI mock interviews.",
+    description: "Everything you need to get started — no credit card required.",
     icon: Sparkles,
     iconColor: "text-muted-foreground",
     iconBg: "bg-secondary",
@@ -18,11 +18,13 @@ const plans = [
     current: true,
     features: [
       "5 mock interviews",
-      "5 questions per interview",
-      "AI-generated feedback",
-      "Voice recording",
-      "Model answers",
-      "Feedback history",
+      "Live AI interviewer (conversational)",
+      "Resume-based interviews (PDF upload)",
+      "5 questions per mock session",
+      "Voice + text answers",
+      "AI feedback & model answers",
+      "Progress analytics across all formats",
+      "Q&A bank & DSA practice IDE",
     ],
     unavailable: [],
     cta: "Current Plan",
@@ -40,13 +42,13 @@ const plans = [
     current: false,
     features: [
       "Unlimited mock interviews",
-      "Up to 10 questions per interview",
-      "AI-generated feedback",
-      "Voice recording",
-      "Model answers",
-      "Feedback history",
-      "Priority AI response",
+      "Unlimited live AI sessions",
+      "Unlimited resume-based interviews",
+      "Up to 10 questions per mock session",
+      "Priority AI response speed",
+      "Advanced analytics & export",
       "Download feedback as PDF",
+      "Everything in Free",
     ],
     unavailable: [],
     cta: "Coming Soon",
@@ -79,19 +81,27 @@ const plans = [
 const faqs = [
   {
     q: "Is the free plan really free?",
-    a: "Yes — no credit card required. You get 5 full mock interviews with AI feedback at no cost.",
+    a: "Yes — no credit card required. You get 5 mock interviews, unlimited live AI sessions, resume uploads, and full analytics at no cost.",
+  },
+  {
+    q: "What's the difference between Mock and Live interviews?",
+    a: "Mock interviews generate questions upfront that you answer one by one. Live interviews are conversational — the AI asks questions, probes your answers, and follows up in real time, like a real interviewer.",
+  },
+  {
+    q: "How do resume-based interviews work?",
+    a: "Upload your resume as a PDF. The AI reads your actual projects, companies, and skills and generates questions specific to your background — not generic prompts.",
+  },
+  {
+    q: "What AI model powers the feedback?",
+    a: "PrepTalk uses Llama 3.3 70B via Groq for fast, high-quality feedback, live conversation, and resume analysis.",
   },
   {
     q: "When will Pro and Team plans launch?",
     a: "We're actively working on paid plans. Join the waitlist to be notified when they go live.",
   },
   {
-    q: "What AI model powers the feedback?",
-    a: "PrepTalk uses Llama 3.3 70B via Groq for fast, high-quality feedback on your answers.",
-  },
-  {
     q: "Can I use PrepTalk on mobile?",
-    a: "Yes — the app is fully responsive. Microphone access works on modern mobile browsers too.",
+    a: "Yes — the app is fully responsive. Microphone access for voice answers and speech recognition works on modern mobile browsers too.",
   },
 ];
 
@@ -191,7 +201,7 @@ export default function UpgradePage() {
         >
           Frequently asked questions
         </motion.h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {faqs.map((faq, i) => (
             <motion.div
               key={faq.q}

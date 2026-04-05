@@ -11,6 +11,7 @@ import { useState } from "react";
 const navLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/questions", label: "Questions" },
+  { href: "/dashboard/analytics", label: "Analytics" },
   { href: "/dashboard/upgrade", label: "Upgrade" },
   { href: "/dashboard/how", label: "How it works" },
 ];

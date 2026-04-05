@@ -10,7 +10,7 @@ const listVariants = {
   visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
 };
 
-const InterviewList = () => {
+const InterviewList = ({ filter = "mock" }) => {
   const { user } = useAuth();
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +26,11 @@ const InterviewList = () => {
       const res = await fetch(`/api/interviews?email=${encodeURIComponent(email)}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load interviews");
-      setInterviews(data);
+      // Split mock vs resume based on jobDesc prefix
+      const filtered = filter === "resume"
+        ? data.filter((i) => i.jobDesc?.startsWith("Resume-based:"))
+        : data.filter((i) => !i.jobDesc?.startsWith("Resume-based:"));
+      setInterviews(filtered);
     } catch (err) {
       console.error("Error fetching interviews:", err);
       setError("Failed to load interviews.");
@@ -68,8 +72,12 @@ const InterviewList = () => {
           transition={{ duration: 0.4 }}
           className="text-center py-16 border-2 border-dashed border-border rounded-2xl"
         >
-          <p className="text-muted-foreground text-sm">No interviews yet.</p>
-          <p className="text-muted-foreground text-xs mt-1">Create your first one above to get started.</p>
+          <p className="text-muted-foreground text-sm">
+            {filter === "resume" ? "No resume interviews yet." : "No mock interviews yet."}
+          </p>
+          <p className="text-muted-foreground text-xs mt-1">
+            {filter === "resume" ? "Upload your resume above to get started." : "Create your first one above to get started."}
+          </p>
         </motion.div>
       ) : (
         <motion.div

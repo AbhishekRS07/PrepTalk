@@ -6,7 +6,18 @@ import QuestionsSection from "./_components/QuestionsSection";
 import RecordAns from "./_components/RecordAns";
 import { Button } from "../../../../../components/ui/button";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, CircleStop, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleStop, Loader2, X } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../../../../../components/ui/alert-dialog";
 import { motion } from "framer-motion";
 
 const StartInterview = () => {
@@ -89,6 +100,33 @@ const StartInterview = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Abandon button — always visible, no save */}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                  <X className="h-4 w-4" />
+                  <span className="hidden sm:inline">Quit</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Quit interview?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Your progress won't be saved and no feedback will be generated. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep going</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => router.push("/dashboard")}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Quit without saving
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
             <Button
               variant="outline"
               size="sm"
