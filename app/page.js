@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -102,6 +102,23 @@ const stats = [
   { value: "100%", label: "Free to use" },
 ];
 
+// Cycling words for the animated headline
+const headlineWords = [
+  "interview",
+  "coding round",
+  "system design",
+  "tech screen",
+  "dream job",
+];
+
+// Marquee keywords
+const marqueeItems = [
+  "React", "Node.js", "System Design", "TypeScript", "AWS",
+  "Python", "DSA", "Behavioral", "Frontend", "Backend",
+  "Full Stack", "DevOps", "SQL", "Go", "Kubernetes",
+  "LeetCode", "Spring Boot", "GraphQL", "Docker", "Redis",
+];
+
 // ── Navbar ─────────────────────────────────────────────────────
 function Navbar({ onGetStarted }) {
   return (
@@ -140,6 +157,35 @@ function Navbar({ onGetStarted }) {
   );
 }
 
+// ── Marquee Band ───────────────────────────────────────────────
+function MarqueeBand() {
+  const doubled = [...marqueeItems, ...marqueeItems];
+  return (
+    <div className="relative overflow-hidden py-4 border-y border-border/40 bg-secondary/20 backdrop-blur-sm">
+      {/* Left fade */}
+      <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+      {/* Right fade */}
+      <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+
+      <motion.div
+        animate={{ x: ["0%", "-50%"] }}
+        transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
+        className="flex gap-10 w-max"
+      >
+        {doubled.map((item, i) => (
+          <span
+            key={i}
+            className="text-sm font-medium text-muted-foreground whitespace-nowrap flex items-center gap-2.5"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-primary/50 flex-shrink-0" />
+            {item}
+          </span>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
 // ── Hero ───────────────────────────────────────────────────────
 function Hero({ onGetStarted }) {
   const { scrollY } = useScroll();
@@ -151,8 +197,31 @@ function Hero({ onGetStarted }) {
   // Entire hero fades as user scrolls away
   const heroOpacity = useTransform(scrollY, [0, 500], [1, 0]);
 
+  // Mouse spotlight
+  const [spot, setSpot] = useState({ x: 50, y: 50, visible: false });
+  const handleMouseMove = useCallback((e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setSpot({
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+      visible: true,
+    });
+  }, []);
+  const handleMouseLeave = useCallback(() => setSpot((s) => ({ ...s, visible: false })), []);
+
+  // Animated headline word
+  const [wordIdx, setWordIdx] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setWordIdx((i) => (i + 1) % headlineWords.length), 2800);
+    return () => clearInterval(id);
+  }, []);
+
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section
+      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
       {/* ── 3D Canvas (parallax layer) ── */}
       <motion.div style={{ y: canvasY }} className="absolute inset-0">
         <HeroCanvas />
@@ -166,6 +235,15 @@ function Hero({ onGetStarted }) {
         {/* Top-right glow blob */}
         <div className="absolute top-1/3 -right-20 w-80 h-80 bg-indigo-600/8 rounded-full blur-3xl pointer-events-none" />
       </motion.div>
+
+      {/* ── Mouse spotlight ── */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[1] transition-opacity duration-500"
+        style={{
+          opacity: spot.visible ? 1 : 0,
+          background: `radial-gradient(700px circle at ${spot.x}% ${spot.y}%, rgba(139,92,246,0.10), transparent 55%)`,
+        }}
+      />
 
       {/* ── Hero Content (parallax layer 2) ── */}
       <motion.div
@@ -184,7 +262,7 @@ function Hero({ onGetStarted }) {
           AI-powered mock interviews
         </motion.div>
 
-        {/* Headline */}
+        {/* Headline with animated word */}
         <motion.h1
           variants={fadeUp}
           initial="hidden"
@@ -193,7 +271,20 @@ function Hero({ onGetStarted }) {
           className="text-5xl md:text-8xl font-black tracking-tight leading-[1.05] mb-6"
         >
           Ace your next{" "}
-          <span className="gradient-text">interview</span>
+          <span className="inline-block relative">
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={headlineWords[wordIdx]}
+                initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -20, filter: "blur(6px)" }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="gradient-text inline-block"
+              >
+                {headlineWords[wordIdx]}
+              </motion.span>
+            </AnimatePresence>
+          </span>
           <br />
           with AI practice
         </motion.h1>
@@ -564,6 +655,7 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground">
       <Navbar onGetStarted={handleGetStarted} />
       <Hero onGetStarted={handleGetStarted} />
+      <MarqueeBand />
       <Features />
       <HowItWorks onGetStarted={handleGetStarted} />
       <Footer />

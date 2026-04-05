@@ -84,6 +84,31 @@ export default function HeroCanvas() {
       return { mesh, baseY, speed, phase: Math.random() * Math.PI * 2 };
     });
 
+    // ── Torus Rings ────────────────────────────────────────────
+    const torus1 = new THREE.Mesh(
+      new THREE.TorusGeometry(2.6, 0.014, 16, 120),
+      new THREE.MeshBasicMaterial({ color: 0x7c3aed, transparent: true, opacity: 0.28 })
+    );
+    torus1.rotation.x = Math.PI / 4;
+    torus1.rotation.y = Math.PI / 8;
+    scene.add(torus1);
+
+    const torus2 = new THREE.Mesh(
+      new THREE.TorusGeometry(4.1, 0.008, 16, 120),
+      new THREE.MeshBasicMaterial({ color: 0x4f46e5, transparent: true, opacity: 0.16 })
+    );
+    torus2.rotation.x = Math.PI / 3;
+    torus2.rotation.z = Math.PI / 5;
+    scene.add(torus2);
+
+    // Inner small torus — tighter, brighter
+    const torus3 = new THREE.Mesh(
+      new THREE.TorusGeometry(1.4, 0.018, 16, 80),
+      new THREE.MeshBasicMaterial({ color: 0x8b5cf6, transparent: true, opacity: 0.22 })
+    );
+    torus3.rotation.x = -Math.PI / 6;
+    scene.add(torus3);
+
     // ── Mouse ──────────────────────────────────────────────────
     const onMouseMove = (e) => {
       mouseRef.current.x = (e.clientX / window.innerWidth - 0.5) * 2;
@@ -118,6 +143,14 @@ export default function HeroCanvas() {
         mesh.rotation.z += 0.002;
         mesh.rotation.x += 0.001;
       });
+
+      // Rotate torus rings independently
+      torus1.rotation.z = t * 0.09;
+      torus1.rotation.y = t * 0.04 + Math.PI / 8;
+      torus2.rotation.z = -t * 0.055;
+      torus2.rotation.y = t * 0.025;
+      torus3.rotation.z = t * 0.14;
+      torus3.rotation.x = -Math.PI / 6 + Math.sin(t * 0.3) * 0.2;
 
       // Smooth mouse parallax on camera
       camera.position.x += (mouseRef.current.x * 1.2 - camera.position.x) * 0.04;

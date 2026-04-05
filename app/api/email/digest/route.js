@@ -2,7 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy — instantiated inside handlers so build doesn't fail without env vars
+const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
 // Admin client — bypasses RLS to read all users
 const supabaseAdmin = createClient(
@@ -256,7 +257,7 @@ export async function GET(req) {
         appUrl,
       });
 
-      await resend.emails.send({
+      await getResend().emails.send({
         from: "PrepTalk <onboarding@resend.dev>",
         to: email,
         subject: thisWeek.length > 0
@@ -298,7 +299,7 @@ export async function POST(req) {
     appUrl: "http://localhost:3000",
   });
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: "PrepTalk <onboarding@resend.dev>",
     to: email,
     subject: "PrepTalk — Test Digest Email",
