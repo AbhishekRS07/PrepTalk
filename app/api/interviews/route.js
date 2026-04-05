@@ -25,5 +25,14 @@ export async function GET(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  // Only return interviews where the user answered at least one question
+  const { data: answers } = await supabase
+    .from("userAnswer")
+    .select("mockId")
+    .eq("userEmail", email);
+
+  const answeredMockIds = new Set((answers || []).map((a) => a.mockId));
+  const completed = (data || []).filter((iv) => answeredMockIds.has(iv.mockId));
+
+  return NextResponse.json(completed);
 }

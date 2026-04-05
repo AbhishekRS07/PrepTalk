@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import QuestionsSection from "./_components/QuestionsSection";
 import RecordAns from "./_components/RecordAns";
 import { Button } from "../../../../../components/ui/button";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, CircleStop, Loader2, X } from "lucide-react";
+import {
+  ChevronLeft, ChevronRight, CircleStop,
+  Loader2, X, Timer, TimerOff,
+} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +21,117 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../../../../../components/ui/alert-dialog";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+// ── Timer presets ─────────────────────────────────────────────────
+const PRESETS = [
+  { label: "Off",    seconds: 0 },
+  { label: "1 min",  seconds: 60 },
+  { label: "2 min",  seconds: 120 },
+  { label: "3 min",  seconds: 180 },
+];
+
+// ── Countdown display ─────────────────────────────────────────────
+function CountdownTimer({ seconds, total }) {
+  if (!total) return null;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  const pct = total > 0 ? seconds / total : 0;
+  const isWarning = seconds <= 30 && seconds > 10;
+  const isDanger  = seconds <= 10;
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={isDanger ? "danger" : isWarning ? "warning" : "normal"}
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className={cn(
+          "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-mono font-bold transition-colors duration-300",
+          isDanger
+            ? "bg-red-500/10 border-red-500/40 text-red-500"
+            : isWarning
+            ? "bg-amber-500/10 border-amber-500/40 text-amber-500"
+            : "bg-secondary border-border text-foreground"
+        )}
+      >
+        {/* Circular progress */}
+        <svg width="18" height="18" viewBox="0 0 18 18" className="shrink-0 -rotate-90">
+          <circle cx="9" cy="9" r="7" fill="none" strokeWidth="2"
+            className="stroke-border" />
+          <circle cx="9" cy="9" r="7" fill="none" strokeWidth="2"
+            strokeDasharray={`${2 * Math.PI * 7}`}
+            strokeDashoffset={`${2 * Math.PI * 7 * (1 - pct)}`}
+            strokeLinecap="round"
+            className={cn(
+              "transition-all duration-1000",
+              isDanger ? "stroke-red-500" : isWarning ? "stroke-amber-500" : "stroke-primary"
+            )}
+          />
+        </svg>
+        <motion.span
+          key={seconds}
+          animate={isDanger ? { scale: [1, 1.2, 1] } : {}}
+          transition={{ duration: 0.3 }}
+        >
+          {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+        </motion.span>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ── Timer preset picker ───────────────────────────────────────────
+function TimerPicker({ selected, onChange }) {
+  const [open, setOpen] = useState(false);
+  const current = PRESETS.find((p) => p.seconds === selected) || PRESETS[0];
+
+  return (
+    <div className="relative">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setOpen((p) => !p)}
+        className="gap-1.5 text-muted-foreground hover:text-foreground"
+        title="Set question timer"
+      >
+        {selected > 0 ? <Timer className="h-4 w-4" /> : <TimerOff className="h-4 w-4" />}
+        <span className="hidden sm:inline text-xs">{current.label}</span>
+      </Button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.97 }}
+              transition={{ duration: 0.15 }}
+              className="absolute left-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[100px]"
+            >
+              {PRESETS.map((p) => (
+                <button
+                  key={p.seconds}
+                  onClick={() => { onChange(p.seconds); setOpen(false); }}
+                  className={cn(
+                    "w-full text-left px-4 py-2 text-sm transition-colors hover:bg-secondary",
+                    selected === p.seconds && "text-primary font-semibold"
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────
 
 const StartInterview = () => {
   const params = useParams();
@@ -30,9 +143,45 @@ const StartInterview = () => {
   const recordAnsRef = useRef();
   const router = useRouter();
 
+  // Timer state
+  const [timerDuration, setTimerDuration] = useState(0); // 0 = off
+  const [timeLeft, setTimeLeft] = useState(0);
+  const timerRef = useRef(null);
+
   useEffect(() => {
     GetInterviewDetails();
   }, [params.interviewId]);
+
+  // Reset + start timer whenever question changes or duration changes
+  useEffect(() => {
+    clearInterval(timerRef.current);
+    if (timerDuration <= 0) { setTimeLeft(0); return; }
+    setTimeLeft(timerDuration);
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [active, timerDuration]);
+
+  // Auto-advance when timer hits 0
+  useEffect(() => {
+    if (timerDuration <= 0 || timeLeft > 0) return;
+    // Small delay so user sees 00:00
+    const t = setTimeout(() => {
+      if (active < prepTalks.length - 1) {
+        handleNext();
+      } else {
+        handleEndInterview();
+      }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [timeLeft]);
 
   const GetInterviewDetails = async () => {
     try {
@@ -49,30 +198,26 @@ const StartInterview = () => {
     }
   };
 
-  // Save current answer then move to next question
   const handleNext = async () => {
     setNavigating(true);
-    if (recordAnsRef.current) {
-      await recordAnsRef.current.saveCurrentAnswer();
-    }
+    clearInterval(timerRef.current);
+    if (recordAnsRef.current) await recordAnsRef.current.saveCurrentAnswer();
     setActive((p) => p + 1);
     setNavigating(false);
   };
 
   const handlePrev = async () => {
     setNavigating(true);
-    if (recordAnsRef.current) {
-      await recordAnsRef.current.saveCurrentAnswer();
-    }
+    clearInterval(timerRef.current);
+    if (recordAnsRef.current) await recordAnsRef.current.saveCurrentAnswer();
     setActive((p) => p - 1);
     setNavigating(false);
   };
 
   const handleEndInterview = async () => {
     setEnding(true);
-    if (recordAnsRef.current) {
-      await recordAnsRef.current.saveCurrentAnswer();
-    }
+    clearInterval(timerRef.current);
+    if (recordAnsRef.current) await recordAnsRef.current.saveCurrentAnswer();
     router.push("/dashboard/interview/" + interviewData?.mockId + "/feedback");
   };
 
@@ -85,7 +230,9 @@ const StartInterview = () => {
       {/* Progress bar */}
       <div className="sticky top-16 z-40 bg-background/80 backdrop-blur border-b border-border px-5 md:px-20 lg:px-36 py-3">
         <div className="flex items-center justify-between gap-4 max-w-6xl mx-auto">
-          <div className="flex items-center gap-3 flex-1">
+
+          {/* Left: progress */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <span className="text-xs text-muted-foreground whitespace-nowrap">
               {active + 1} / {prepTalks.length}
             </span>
@@ -99,8 +246,18 @@ const StartInterview = () => {
             <span className="text-xs text-muted-foreground">{progress}%</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Abandon button — always visible, no save */}
+          {/* Right: timer + controls */}
+          <div className="flex items-center gap-2 shrink-0">
+
+            {/* Timer display */}
+            {timerDuration > 0 && (
+              <CountdownTimer seconds={timeLeft} total={timerDuration} />
+            )}
+
+            {/* Timer picker */}
+            <TimerPicker selected={timerDuration} onChange={setTimerDuration} />
+
+            {/* Quit */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
@@ -127,6 +284,7 @@ const StartInterview = () => {
               </AlertDialogContent>
             </AlertDialog>
 
+            {/* Prev */}
             <Button
               variant="outline"
               size="sm"
@@ -138,38 +296,20 @@ const StartInterview = () => {
               <span className="hidden sm:inline">Prev</span>
             </Button>
 
+            {/* Next / End */}
             {active < prepTalks.length - 1 ? (
-              <Button
-                size="sm"
-                onClick={handleNext}
-                disabled={navigating}
-                className="gap-1"
-              >
-                {navigating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <span className="hidden sm:inline">Next</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </>
-                )}
+              <Button size="sm" onClick={handleNext} disabled={navigating} className="gap-1">
+                {navigating
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : <><span className="hidden sm:inline">Next</span><ChevronRight className="h-4 w-4" /></>
+                }
               </Button>
             ) : (
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={handleEndInterview}
-                disabled={ending}
-                className="gap-1.5"
-              >
-                {ending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <CircleStop className="h-4 w-4" />
-                    End Interview
-                  </>
-                )}
+              <Button size="sm" variant="destructive" onClick={handleEndInterview} disabled={ending} className="gap-1.5">
+                {ending
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : <><CircleStop className="h-4 w-4" />End Interview</>
+                }
               </Button>
             )}
           </div>

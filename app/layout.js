@@ -20,7 +20,8 @@ export default function RootLayout({ children }) {
           attribute="class"
           defaultTheme="system"
           enableSystem
-          disableTransitionOnChange={false}
+          disableTransitionOnChange
+          storageKey="preptalk-theme"
         >
           <AuthProvider>
             <Toaster richColors position="top-center" />

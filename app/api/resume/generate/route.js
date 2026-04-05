@@ -15,25 +15,42 @@ export async function POST(request) {
   const jobPosition = formData.get("jobPosition") || "";
   const experience = formData.get("experience") || "0";
   const userEmail = formData.get("userEmail");
+  const useSaved = formData.get("useSaved") === "true";
 
-  if (!file || !userEmail) {
+  if (!userEmail) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  // Parse PDF
+  // Parse PDF or use saved resume text
   let resumeText = "";
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-    const { text } = await extractText(uint8Array, { mergePages: true });
-    resumeText = text?.trim();
-  } catch (err) {
-    console.error("PDF parse error:", err);
-    return NextResponse.json({ error: `Failed to parse PDF: ${err.message}` }, { status: 400 });
-  }
 
-  if (!resumeText || resumeText.length < 50) {
-    return NextResponse.json({ error: "Could not extract enough text from the resume. Make sure it's not a scanned image PDF." }, { status: 400 });
+  if (useSaved) {
+    // Fetch saved resume text from profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("resume_text")
+      .eq("email", userEmail)
+      .single();
+
+    if (!profile?.resume_text) {
+      return NextResponse.json({ error: "No saved resume found. Please upload a PDF." }, { status: 400 });
+    }
+    resumeText = profile.resume_text;
+  } else {
+    if (!file) return NextResponse.json({ error: "Missing file" }, { status: 400 });
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const { text } = await extractText(uint8Array, { mergePages: true });
+      resumeText = text?.trim();
+    } catch (err) {
+      console.error("PDF parse error:", err);
+      return NextResponse.json({ error: `Failed to parse PDF: ${err.message}` }, { status: 400 });
+    }
+
+    if (!resumeText || resumeText.length < 50) {
+      return NextResponse.json({ error: "Could not extract enough text from the resume. Make sure it's not a scanned image PDF." }, { status: 400 });
+    }
   }
 
   // Truncate to avoid token limits

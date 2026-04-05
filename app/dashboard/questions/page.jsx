@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSessionState, useSessionSet } from "@/lib/useSessionState";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -19,7 +20,10 @@ import {
   Send,
   Bot,
   User,
+  Bookmark,
+  BookmarkCheck,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { useRef, useEffect } from "react";
 import { Button } from "../../../components/ui/button";
 import { cn } from "@/lib/utils";
@@ -105,7 +109,7 @@ async function runCode(compiler, code, stdin = "") {
 
 // ── IDE Panel ─────────────────────────────────────────────────────
 
-function IDEPanel({ problem, onClose }) {
+function IDEPanel({ problem, onClose, onMarkSolved, isSolved }) {
   const [lang, setLang] = useState(LANGUAGES[0]);
   const [code, setCode] = useState(LANGUAGES[0].defaultCode);
   const [stdin, setStdin] = useState("");
@@ -231,6 +235,19 @@ Respond helpfully in 2-4 sentences. Give hints, explain concepts, point out bugs
           >
             <Bot className="h-3.5 w-3.5" />
             AI Hint
+          </button>
+          <button
+            onClick={() => { onMarkSolved?.(problem); onClose(); }}
+            title={isSolved ? "Already marked solved" : "Mark as solved"}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors",
+              isSolved
+                ? "bg-emerald-500/15 text-emerald-500 cursor-default"
+                : "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
+            )}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            {isSolved ? "Solved" : "Mark Solved"}
           </button>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
             <X className="h-4 w-4" />
@@ -411,22 +428,35 @@ Respond helpfully in 2-4 sentences. Give hints, explain concepts, point out bugs
 
 // ── DSA Question Card ─────────────────────────────────────────────
 
-function DSAQuestionCard({ problem, index, onSolve }) {
+function DSAQuestionCard({ problem, index, onSolve, isSolved }) {
   const [open, setOpen] = useState(false);
   return (
-    <motion.div variants={listItem} className="group border border-border rounded-2xl overflow-hidden hover:border-primary/30 transition-colors duration-300">
+    <motion.div variants={listItem} className={cn(
+      "group border rounded-2xl overflow-hidden transition-colors duration-300",
+      isSolved
+        ? "border-emerald-500/30 bg-emerald-500/3 hover:border-emerald-500/50"
+        : "border-border hover:border-primary/30"
+    )}>
       <button onClick={() => setOpen((p) => !p)}
         className="w-full flex items-center justify-between gap-4 p-5 text-left hover:bg-secondary/40 transition-colors">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="shrink-0 h-6 w-6 rounded-full bg-secondary group-hover:bg-primary/10 flex items-center justify-center text-xs font-bold transition-colors duration-300">
-            {index + 1}
+          <span className={cn(
+            "shrink-0 h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors duration-300",
+            isSolved
+              ? "bg-emerald-500/20 text-emerald-500"
+              : "bg-secondary group-hover:bg-primary/10"
+          )}>
+            {isSolved ? <CheckCircle2 className="h-3.5 w-3.5" /> : index + 1}
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-medium truncate">{problem.title}</p>
+            <p className={cn("text-sm font-medium truncate", isSolved && "line-through text-muted-foreground")}>{problem.title}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{problem.topic}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
+          {isSolved && (
+            <span className="text-xs font-semibold text-emerald-500 hidden sm:inline">Solved</span>
+          )}
           <span className={cn("text-xs font-semibold px-2.5 py-0.5 rounded-full border", difficultyColor[problem.difficulty])}>
             {problem.difficulty}
           </span>
@@ -466,12 +496,18 @@ function DSAQuestionCard({ problem, index, onSolve }) {
 // ── DSA Tab ───────────────────────────────────────────────────────
 
 function DSATab() {
-  const [topic, setTopic] = useState("");
-  const [experience, setExperience] = useState("0");
-  const [problems, setProblems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [generated, setGenerated] = useState(false);
+  const [topic, setTopic]           = useSessionState("dsa_topic", "");
+  const [experience, setExperience] = useSessionState("dsa_experience", "0");
+  const [problems, setProblems]     = useSessionState("dsa_problems", []);
+  const [loading, setLoading]       = useState(false);
+  const [generated, setGenerated]   = useSessionState("dsa_generated", false);
   const [activeProblem, setActiveProblem] = useState(null);
+  const [solved, setSolved]         = useSessionSet("dsa_solved");
+  const [filter, setFilter]         = useSessionState("dsa_filter", "all");
+
+  const handleMarkSolved = (problem) => {
+    setSolved((prev) => new Set([...prev, problem.title]));
+  };
 
   const generate = async () => {
     if (!topic) return;
@@ -509,7 +545,12 @@ Use only standard ASCII. No markdown, no code blocks, no explanation outside the
     return (
       <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}
         className="border border-border rounded-2xl overflow-hidden" style={{ height: "78vh" }}>
-        <IDEPanel problem={activeProblem} onClose={() => setActiveProblem(null)} />
+        <IDEPanel
+          problem={activeProblem}
+          onClose={() => setActiveProblem(null)}
+          onMarkSolved={handleMarkSolved}
+          isSolved={solved.has(activeProblem.title)}
+        />
       </motion.div>
     );
   }
@@ -556,21 +597,58 @@ Use only standard ASCII. No markdown, no code blocks, no explanation outside the
       <AnimatePresence mode="wait">
         {problems.length > 0 && (
           <motion.div key={topic + experience} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            {/* Header row */}
             <motion.div variants={fadeUp} initial="hidden" animate="visible"
-              className="flex items-center justify-between mb-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                {topic} · {EXPERIENCE_LEVELS.find(l => l.value === experience)?.label}
-              </p>
+              className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                {/* Filter pills */}
+                {[
+                  { id: "all",      label: `All (${problems.length})` },
+                  { id: "unsolved", label: `Unsolved (${problems.length - solved.size})` },
+                  { id: "solved",   label: `Solved (${solved.size})` },
+                ].map(({ id, label }) => (
+                  <button key={id} onClick={() => setFilter(id)}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
+                      filter === id
+                        ? id === "solved"
+                          ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-500"
+                          : "bg-primary/10 border-primary/30 text-primary"
+                        : "border-border text-muted-foreground hover:text-foreground"
+                    )}>
+                    {label}
+                  </button>
+                ))}
+              </div>
               <button onClick={generate} disabled={loading}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
                 <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} /> Regenerate
               </button>
             </motion.div>
             <motion.div variants={listContainer} initial="hidden" animate="visible" className="space-y-3">
-              {problems.map((p, i) => (
-                <DSAQuestionCard key={i} problem={p} index={i} onSolve={setActiveProblem} />
-              ))}
+              {problems
+                .filter((p) =>
+                  filter === "solved" ? solved.has(p.title) :
+                  filter === "unsolved" ? !solved.has(p.title) : true
+                )
+                .map((p, i) => (
+                  <DSAQuestionCard
+                    key={p.title}
+                    problem={p}
+                    index={problems.indexOf(p)}
+                    onSolve={setActiveProblem}
+                    isSolved={solved.has(p.title)}
+                  />
+                ))}
             </motion.div>
+            {filter === "unsolved" && problems.filter(p => !solved.has(p.title)).length === 0 && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="text-center py-12 text-muted-foreground">
+                <CheckCircle2 className="h-10 w-10 mx-auto mb-3 text-emerald-500/40" />
+                <p className="text-sm font-medium">All problems solved!</p>
+                <button onClick={generate} className="text-xs text-primary hover:underline mt-1">Generate new problems</button>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -590,8 +668,18 @@ Use only standard ASCII. No markdown, no code blocks, no explanation outside the
 
 // ── Q&A Card ──────────────────────────────────────────────────────
 
-function QACard({ item, index }) {
+function QACard({ item, index, isBookmarked, onToggleBookmark }) {
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const handleBookmark = async (e) => {
+    e.stopPropagation();
+    if (!onToggleBookmark) return;
+    setSaving(true);
+    await onToggleBookmark(item);
+    setSaving(false);
+  };
+
   return (
     <motion.div variants={listItem}
       className="group border border-border rounded-2xl overflow-hidden hover:border-primary/30 transition-colors duration-300">
@@ -603,9 +691,31 @@ function QACard({ item, index }) {
           </span>
           <span className="text-sm font-medium leading-relaxed">{item.question}</span>
         </div>
-        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.25, ease: "easeInOut" }} className="shrink-0 mt-0.5">
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-        </motion.div>
+        <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+          {onToggleBookmark && (
+            <button
+              onClick={handleBookmark}
+              disabled={saving}
+              title={isBookmarked ? "Remove bookmark" : "Bookmark this question"}
+              className={cn(
+                "p-1.5 rounded-lg transition-colors",
+                isBookmarked
+                  ? "text-primary hover:text-primary/70"
+                  : "text-muted-foreground/30 hover:text-muted-foreground"
+              )}
+            >
+              {saving
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : isBookmarked
+                ? <BookmarkCheck className="h-4 w-4" />
+                : <Bookmark className="h-4 w-4" />
+              }
+            </button>
+          )}
+          <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.25, ease: "easeInOut" }} className="shrink-0">
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </motion.div>
+        </div>
       </button>
       <AnimatePresence initial={false}>
         {open && (
@@ -626,12 +736,39 @@ function QACard({ item, index }) {
 // ── Interview Q&A Tab ─────────────────────────────────────────────
 
 function InterviewQATab() {
-  const [profile, setProfile] = useState("");
-  const [experience, setExperience] = useState("0");
-  const [questions, setQuestions] = useState([]);
-  const [page, setPage] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [generated, setGenerated] = useState(false);
+  const { user } = useAuth();
+  const [profile, setProfile]       = useSessionState("qa_profile", "");
+  const [experience, setExperience] = useSessionState("qa_experience", "0");
+  const [questions, setQuestions]   = useSessionState("qa_questions", []);
+  const [page, setPage]             = useSessionState("qa_page", 0);
+  const [loading, setLoading]       = useState(false);
+  const [generated, setGenerated]   = useSessionState("qa_generated", false);
+  const [bookmarked, setBookmarked] = useSessionSet("qa_bookmarked");
+
+  // Fetch bookmarks on mount — only if session cache is empty
+  useEffect(() => {
+    if (!user?.email || bookmarked.size > 0) return;
+    fetch("/api/bookmarks")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setBookmarked(new Set(data.map((b) => b.question)));
+      })
+      .catch(() => {});
+  }, [user?.email]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleToggleBookmark = async (item) => {
+    const res = await fetch("/api/bookmarks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: item.question, answer: item.answer, profile }),
+    });
+    const data = await res.json();
+    setBookmarked((prev) => {
+      const next = new Set(prev);
+      data.bookmarked ? next.add(item.question) : next.delete(item.question);
+      return next;
+    });
+  };
 
   const generate = async (nextPage = 0) => {
     if (!profile) return;
@@ -694,7 +831,15 @@ function InterviewQATab() {
               <span className="text-xs text-muted-foreground">{questions.length} questions</span>
             </motion.div>
             <motion.div variants={listContainer} initial="hidden" animate="visible" className="space-y-3">
-              {questions.map((q, i) => <QACard key={`${page}-${i}`} item={q} index={i} />)}
+              {questions.map((q, i) => (
+                <QACard
+                  key={`${page}-${i}`}
+                  item={q}
+                  index={i}
+                  isBookmarked={bookmarked.has(q.question)}
+                  onToggleBookmark={handleToggleBookmark}
+                />
+              ))}
             </motion.div>
             <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="mt-4">
               <Button variant="outline" className="w-full gap-2" onClick={() => generate(page + 1)} disabled={loading}>
@@ -719,15 +864,139 @@ function InterviewQATab() {
   );
 }
 
+// ── Bookmark Card ─────────────────────────────────────────────────
+
+function BookmarkCard({ item, index, onRemove }) {
+  const [open, setOpen] = useState(false);
+  const [removing, setRemoving] = useState(false);
+
+  const handleRemove = async (e) => {
+    e.stopPropagation();
+    setRemoving(true);
+    await onRemove();
+  };
+
+  return (
+    <motion.div variants={listItem}
+      className="group border border-border rounded-2xl overflow-hidden hover:border-primary/30 transition-colors duration-300">
+      <button onClick={() => setOpen((p) => !p)}
+        className="w-full flex items-start justify-between gap-4 p-5 text-left hover:bg-secondary/40 transition-colors">
+        <div className="flex items-start gap-3">
+          <span className="shrink-0 h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold mt-0.5">
+            {index + 1}
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium leading-relaxed">{item.question}</p>
+            {item.profile && (
+              <p className="text-xs text-muted-foreground mt-0.5">{item.profile}</p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+          <button
+            onClick={handleRemove}
+            disabled={removing}
+            title="Remove bookmark"
+            className="p-1.5 rounded-lg text-primary hover:text-primary/60 transition-colors"
+          >
+            {removing
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <BookmarkCheck className="h-4 w-4" />
+            }
+          </button>
+          <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.25, ease: "easeInOut" }}>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </motion.div>
+        </div>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden">
+            <div className="px-5 pb-5 pt-1 border-t border-border">
+              <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">Answer</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{item.answer}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// ── Bookmarks Tab ─────────────────────────────────────────────────
+
+function BookmarksTab() {
+  const { user } = useAuth();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.email) return;
+    fetch("/api/bookmarks")
+      .then((r) => r.json())
+      .then((data) => { setItems(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [user?.email]);
+
+  const handleRemove = async (bookmark) => {
+    await fetch("/api/bookmarks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: bookmark.question, answer: bookmark.answer, profile: bookmark.profile }),
+    });
+    setItems((prev) => prev.filter((b) => b.id !== bookmark.id));
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!items.length) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+        className="text-center py-20 text-muted-foreground">
+        <div className="animate-float">
+          <Bookmark className="h-12 w-12 mx-auto mb-4 opacity-20" />
+        </div>
+        <p className="text-sm font-medium">No bookmarks yet.</p>
+        <p className="text-xs mt-1 opacity-70">Save questions from the Interview Q&amp;A tab to study them here.</p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          {items.length} saved question{items.length !== 1 ? "s" : ""}
+        </p>
+      </div>
+      <motion.div variants={listContainer} initial="hidden" animate="visible" className="space-y-3">
+        {items.map((b, i) => (
+          <BookmarkCard key={b.id} item={b} index={i} onRemove={() => handleRemove(b)} />
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: "qa",  label: "Interview Q&A", icon: BrainCircuit },
-  { id: "dsa", label: "DSA Practice",  icon: Code2 },
+  { id: "qa",        label: "Interview Q&A", icon: BrainCircuit },
+  { id: "dsa",       label: "DSA Practice",  icon: Code2 },
+  { id: "bookmarks", label: "Bookmarks",     icon: Bookmark },
 ];
 
 export default function QuestionsPage() {
-  const [tab, setTab] = useState("qa");
+  const [tab, setTab] = useSessionState("questions_tab", "qa");
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16">
@@ -746,33 +1015,36 @@ export default function QuestionsPage() {
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}>
         <div className="relative inline-flex bg-secondary rounded-xl p-1">
           {/* Sliding background pill */}
-          <div
-            className="absolute top-1 bottom-1 w-[calc(50%-2px)] rounded-lg bg-background shadow-sm transition-transform duration-300"
-            style={{
-              transitionTimingFunction: "cubic-bezier(0.22,1,0.36,1)",
-              transform: tab === "qa" ? "translateX(0)" : "translateX(calc(100% + 4px))",
-            }}
-          />
+          {(() => {
+            const idx = TABS.findIndex((t) => t.id === tab);
+            return (
+              <div
+                className="absolute top-1 bottom-1 rounded-lg bg-background shadow-sm transition-all duration-300"
+                style={{
+                  width: `calc(${100 / TABS.length}% - ${8 / TABS.length}px)`,
+                  transitionTimingFunction: "cubic-bezier(0.22,1,0.36,1)",
+                  transform: `translateX(calc(${idx * 100}% + ${idx * 4}px))`,
+                }}
+              />
+            );
+          })()}
           {TABS.map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => setTab(id)}
               className={cn(
-                "relative z-10 flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-colors duration-200",
+                "relative z-10 flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-colors duration-200 whitespace-nowrap",
                 tab === id ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               )}>
               <Icon className="h-4 w-4" />
-              {label}
+              <span className="hidden sm:inline">{label}</span>
             </button>
           ))}
         </div>
       </motion.div>
 
-      {/* Tab content */}
-      <AnimatePresence mode="wait">
-        <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.22 }}>
-          {tab === "qa" ? <InterviewQATab /> : <DSATab />}
-        </motion.div>
-      </AnimatePresence>
+      {/* Tab content — always mounted to preserve state */}
+      <div className={tab === "qa" ? undefined : "hidden"}><InterviewQATab /></div>
+      <div className={tab === "dsa" ? undefined : "hidden"}><DSATab /></div>
+      <div className={tab === "bookmarks" ? undefined : "hidden"}><BookmarksTab /></div>
     </div>
   );
 }

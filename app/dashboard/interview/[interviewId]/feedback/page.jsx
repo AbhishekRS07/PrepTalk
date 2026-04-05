@@ -13,6 +13,9 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  Share2,
+  Copy,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -187,7 +190,29 @@ const Feedback = () => {
   const [feedbackList, setFeedbackList] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [sharing, setSharing] = useState(false);
+  const [copied, setCopied] = useState(false);
   const router = useRouter();
+
+  const handleShare = async () => {
+    setSharing(true);
+    try {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mockId: params.interviewId }),
+      });
+      const { token } = await res.json();
+      const url = `${window.location.origin}/share/${token}`;
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch (err) {
+      console.error("Share failed:", err);
+    } finally {
+      setSharing(false);
+    }
+  };
 
   useEffect(() => {
     GetFeedback();
@@ -323,13 +348,27 @@ const Feedback = () => {
       </div>
 
       {/* Actions */}
-      <div className="flex gap-3 pb-8">
+      <div className="flex flex-wrap gap-3 pb-8">
         <Button
           variant="outline"
           className="flex-1 gap-2"
           onClick={() => router.replace(`/dashboard/interview/${params.interviewId}/start`)}
         >
           <RotateCcw className="h-4 w-4" /> Retry Interview
+        </Button>
+        <Button
+          variant="outline"
+          className="flex-1 gap-2"
+          onClick={handleShare}
+          disabled={sharing}
+        >
+          {sharing
+            ? <Loader2 className="h-4 w-4 animate-spin" />
+            : copied
+            ? <Check className="h-4 w-4 text-emerald-500" />
+            : <Share2 className="h-4 w-4" />
+          }
+          {copied ? "Link copied!" : "Share Results"}
         </Button>
         <Button
           className="flex-1 gap-2"

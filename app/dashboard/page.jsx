@@ -4,8 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import AddNewInterview from "./_components/AddNewInterview";
 import LiveInterviewCard from "./_components/LiveInterviewCard";
 import ResumeInterviewCard from "./_components/ResumeInterviewCard";
+import JDPrepCard from "./_components/JDPrepCard";
 import InterviewList from "./_components/InterviewList";
 import LiveInterviewList from "./_components/LiveInterviewList";
+import StreakWidget from "./_components/StreakWidget";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { BarChart3, Mic, FileText } from "lucide-react";
@@ -59,15 +61,21 @@ const Dashboard = () => {
         </motion.p>
       </motion.div>
 
+      {/* Streak + goal widget */}
+      <motion.div variants={sectionVariants} initial="hidden" animate="visible" custom={1}>
+        <StreakWidget />
+      </motion.div>
+
       {/* New Interview cards */}
       <motion.div variants={sectionVariants} initial="hidden" animate="visible" custom={2}>
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-4">
           Start Interview
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <AddNewInterview />
           <LiveInterviewCard />
           <ResumeInterviewCard />
+          <JDPrepCard />
         </div>
       </motion.div>
 
