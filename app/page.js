@@ -130,7 +130,7 @@ function Navbar({ onGetStarted }) {
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Image src="/logo.svg" width={32} height={32} alt="PrepTalk" />
+          <Image src="/logo.svg" width={32} height={32} alt="PrepTalk" priority />
           <span className="font-bold text-lg tracking-tight">PrepTalk</span>
         </div>
 
@@ -262,14 +262,8 @@ function Hero({ onGetStarted }) {
           AI-powered mock interviews
         </motion.div>
 
-        {/* Headline with animated word */}
-        <motion.h1
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={1}
-          className="text-5xl md:text-8xl font-black tracking-tight leading-[1.05] mb-6"
-        >
+        {/* Headline with animated word — rendered immediately for LCP */}
+        <h1 className="text-5xl md:text-8xl font-black tracking-tight leading-[1.05] mb-6 animate-fade-up">
           Ace your next{" "}
           <span className="inline-block relative">
             <AnimatePresence mode="wait">
@@ -287,7 +281,7 @@ function Hero({ onGetStarted }) {
           </span>
           <br />
           with AI practice
-        </motion.h1>
+        </h1>
 
         {/* Subheadline */}
         <motion.p
