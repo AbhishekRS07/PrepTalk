@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 function parseDate(str) {
@@ -24,9 +24,8 @@ function getMondayOfWeek(date) {
 }
 
 export async function GET(req) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user, supabase, unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const email = user.email;
 

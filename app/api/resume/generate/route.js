@@ -1,14 +1,14 @@
- import { createClient } from "@/utils/supabase/server";
+import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { runPrompt } from "@/lib/langchain";
+import { cleanJson } from "@/lib/utils";
 import { v4 as uuidv4 } from "uuid";
 import moment from "moment";
 import { extractText } from "unpdf";
 
 export async function POST(request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user, supabase, unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const formData = await request.formData();
   const file = formData.get("file");
@@ -86,19 +86,11 @@ Return ONLY a valid JSON array with "question" and "answer" fields. No markdown,
     return NextResponse.json({ error: "AI generation failed. Please try again." }, { status: 500 });
   }
 
-  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
-
   let parsed;
   try {
-    parsed = JSON.parse(cleaned);
+    parsed = JSON.parse(cleanJson(raw, "array"));
   } catch {
-    const match = cleaned.match(/\[[\s\S]*\]/);
-    if (!match) return NextResponse.json({ error: "Failed to parse AI response." }, { status: 500 });
-    try {
-      parsed = JSON.parse(match[0]);
-    } catch {
-      return NextResponse.json({ error: "Failed to parse AI response." }, { status: 500 });
-    }
+    return NextResponse.json({ error: "Failed to parse AI response." }, { status: 500 });
   }
 
   const mockId = uuidv4();

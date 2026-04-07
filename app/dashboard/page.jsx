@@ -10,25 +10,8 @@ import LiveInterviewList from "./_components/LiveInterviewList";
 import StreakWidget from "./_components/StreakWidget";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
+import { containerVariants, lineVariants, sectionVariants } from "@/lib/animations";
 import { BarChart3, Mic, FileText } from "lucide-react";
-
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.12, delayChildren: 0.05 } },
-};
-
-const lineVariants = {
-  hidden: { opacity: 0, y: 18 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
-};
-
-const sectionVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.5, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] },
-  }),
-};
 
 const tabs = [
   { id: "mock",   label: "Mock Interviews",   icon: BarChart3 },

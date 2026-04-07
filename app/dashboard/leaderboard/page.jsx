@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
 import { Trophy, Medal, Loader2, BarChart3, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fadeUp } from "@/lib/animations";
 
 const ratingColor = (r) => {
   if (r >= 7.5) return "#10b981";
@@ -16,14 +17,6 @@ const MEDAL = {
   1: { icon: "🥇", color: "text-yellow-400",  bg: "bg-yellow-400/10 border-yellow-400/30" },
   2: { icon: "🥈", color: "text-slate-300",   bg: "bg-slate-400/10 border-slate-400/30" },
   3: { icon: "🥉", color: "text-amber-600",   bg: "bg-amber-600/10 border-amber-600/30" },
-};
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  visible: (i) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.4, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] },
-  }),
 };
 
 export default function LeaderboardPage() {

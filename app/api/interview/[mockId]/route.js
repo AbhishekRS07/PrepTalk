@@ -1,12 +1,9 @@
-import { createClient } from "@/utils/supabase/server";
+import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 export async function GET(request, { params }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { supabase, unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const { mockId } = await params;
 
@@ -24,11 +21,8 @@ export async function GET(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { supabase, unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const { mockId } = await params;
 

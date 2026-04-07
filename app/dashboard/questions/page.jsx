@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useSessionState, useSessionSet } from "@/lib/useSessionState";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Loader2,
   Sparkles,
+  // (also used as Challenges tab icon)
   RefreshCw,
   Code2,
   BrainCircuit,
@@ -24,9 +25,11 @@ import {
   BookmarkCheck,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "../../../components/ui/button";
 import { cn } from "@/lib/utils";
+import { fadeUp, listContainer, listItem } from "@/lib/animations";
+import ChallengesTab, { CHALLENGE_CATEGORIES, ChallengeIDE, ChallengeDescription } from "./ChallengesTab";
 
 async function generateText(prompt) {
   const res = await fetch("/api/questions/generate", {
@@ -58,8 +61,12 @@ const EXPERIENCE_LEVELS = [
 ];
 
 const DSA_TOPICS = [
-  "Arrays","Strings","Linked List","Trees","Graphs",
-  "Dynamic Programming","Recursion","Sorting & Searching","Stack & Queue","Hashing",
+  "Arrays", "Strings", "Linked List", "Trees", "Binary Trees", "Binary Search Trees",
+  "Graphs", "Dynamic Programming", "Recursion", "Backtracking",
+  "Sorting & Searching", "Binary Search", "Stack & Queue", "Hashing",
+  "Heaps & Priority Queue", "Two Pointers", "Sliding Window",
+  "Greedy", "Divide & Conquer", "Bit Manipulation",
+  "Trie", "Segment Tree", "Matrix & 2D Arrays", "Math & Number Theory",
 ];
 
 const LANGUAGES = [
@@ -74,26 +81,6 @@ const difficultyColor = {
   Easy:   "text-emerald-600 bg-emerald-500/10 border-emerald-500/20 dark:text-emerald-400",
   Medium: "text-amber-600 bg-amber-500/10 border-amber-500/20 dark:text-amber-400",
   Hard:   "text-red-500 bg-red-500/10 border-red-500/20",
-};
-
-// ── Animation Variants ─────────────────────────────────────────────
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  visible: (i = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.45, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
-  }),
-};
-
-const listContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
-};
-
-const listItem = {
-  hidden: { opacity: 0, y: 18, scale: 0.98 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
 };
 
 // ── Wandbox API ───────────────────────────────────────────────────
@@ -495,8 +482,8 @@ function DSAQuestionCard({ problem, index, onSolve, isSolved }) {
 
 // ── DSA Tab ───────────────────────────────────────────────────────
 
-function DSATab() {
-  const [topic, setTopic]           = useSessionState("dsa_topic", "");
+function DSATab({ initialTopics = [], initialExperience = null, autoGenerate = false }) {
+  const [topics, setTopics]         = useSessionState("dsa_topics", []);
   const [experience, setExperience] = useSessionState("dsa_experience", "0");
   const [problems, setProblems]     = useSessionState("dsa_problems", []);
   const [loading, setLoading]       = useState(false);
@@ -504,42 +491,96 @@ function DSATab() {
   const [activeProblem, setActiveProblem] = useState(null);
   const [solved, setSolved]         = useSessionSet("dsa_solved");
   const [filter, setFilter]         = useSessionState("dsa_filter", "all");
+  const [genError, setGenError]     = useState("");
+  const didAutoGenerate             = useRef(false);
 
   const handleMarkSolved = (problem) => {
     setSolved((prev) => new Set([...prev, problem.title]));
   };
 
-  const generate = async () => {
-    if (!topic) return;
-    setLoading(true); setActiveProblem(null);
-    try {
-      const expLabel = EXPERIENCE_LEVELS.find(l => l.value === experience)?.label || "Fresher";
-      const prompt = `Generate 8 DSA problems on "${topic}" for a ${expLabel} developer. Reply ONLY with a JSON array. Each object must have these exact keys:
-"title" (string), "difficulty" (exactly "Easy" or "Medium" or "Hard"), "topic" (string), "description" (string, max 2 sentences, no special characters or newlines), "examples" (array of 2 objects each with "input" string and "output" string), "constraints" (array of 2 strings), "hint" (string, 1 sentence).
-Use only standard ASCII. No markdown, no code blocks, no explanation outside the JSON array.`;
-      const text = await generateText(prompt);
-      let s = text.replace(/```[\w]*\n?/g, "").replace(/```/g, "");
-      s = s.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
-      const start = s.indexOf("[");
-      if (start === -1) throw new Error("No JSON array found");
-      s = s.slice(start);
-      let parsed = null;
-      try { parsed = JSON.parse(s); } catch (_) {
-        const lastComplete = Math.max(s.lastIndexOf("},"), s.lastIndexOf("}\n]"), s.lastIndexOf("} ]"));
-        if (lastComplete !== -1) {
-          const recovered = s.slice(0, lastComplete + 1) + "]";
-          try { parsed = JSON.parse(recovered); } catch (_2) {
-            const objects = []; const objRegex = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g; let m;
-            while ((m = objRegex.exec(s)) !== null) { try { objects.push(JSON.parse(m[0])); } catch (_3) {} }
-            if (objects.length === 0) throw new Error("Could not recover any valid problems");
-            parsed = objects;
-          }
-        }
-      }
-      setProblems(parsed); setGenerated(true);
-    } catch (err) { console.error("DSA generation error:", err); }
-    finally { setLoading(false); }
+  const toggleTopic = (t) => {
+    setTopics((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]);
+    setGenerated(false);
+    setProblems([]);
   };
+
+  const generateWithExperience = async (topicsOverride, experienceOverride) => {
+    const activeTopics = topicsOverride ?? topics;
+    const activeExp    = experienceOverride ?? experience;
+    if (activeTopics.length === 0) return;
+    setLoading(true); setActiveProblem(null); setGenError("");
+    try {
+      const expLabel = EXPERIENCE_LEVELS.find(l => l.value === activeExp)?.label || "Fresher";
+      const topicStr = activeTopics.length === 1
+        ? `"${activeTopics[0]}"`
+        : activeTopics.map((t) => `"${t}"`).join(", ");
+      const prompt = `Generate 8 DSA problems covering these topics: ${topicStr}. For a ${expLabel} developer. Distribute problems evenly across topics if multiple are given.
+
+Reply ONLY with a valid JSON array — no markdown, no code fences, no explanation.
+Each element must have EXACTLY these keys:
+- "title": short problem name (string)
+- "difficulty": exactly one of "Easy", "Medium", "Hard"
+- "topic": which topic this problem is from (string)
+- "description": 1-2 sentences, plain ASCII only, no newlines
+- "examples": array of exactly 2 objects, each with "input" (string) and "output" (string)
+- "constraints": array of exactly 2 strings
+- "hint": one sentence hint (string)`;
+
+      const raw = await generateText(prompt);
+
+      // Strip markdown fences
+      let s = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+
+      // Extract the array boundaries
+      const start = s.indexOf("[");
+      const end   = s.lastIndexOf("]");
+      if (start === -1 || end === -1 || end <= start) {
+        throw new Error("Response did not contain a JSON array");
+      }
+      s = s.slice(start, end + 1);
+
+      // Fix stray backslashes that break JSON
+      s = s.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
+
+      let parsed;
+      try {
+        parsed = JSON.parse(s);
+      } catch {
+        // Try fixing trailing commas before ] or }
+        const fixed = s.replace(/,(\s*[}\]])/g, "$1");
+        parsed = JSON.parse(fixed); // let it throw naturally if still broken
+      }
+
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        throw new Error("Parsed result is not a non-empty array");
+      }
+
+      setProblems(parsed); setGenerated(true);
+    } catch (err) {
+      console.error("DSA generation error:", err);
+      setGenError("Generation failed — the AI returned an unexpected response. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generate = (topicsOverride) => generateWithExperience(topicsOverride, null);
+
+  // Apply initialTopics/initialExperience from URL params and auto-generate once
+  useEffect(() => {
+    if (initialTopics.length > 0 && !didAutoGenerate.current) {
+      didAutoGenerate.current = true;
+      setTopics(initialTopics);
+      setGenerated(false);
+      setProblems([]);
+      const expToUse = initialExperience ?? experience;
+      if (initialExperience) setExperience(initialExperience);
+      if (autoGenerate) {
+        // generate() reads experience from state which may not be updated yet — pass it directly
+        generateWithExperience(initialTopics, expToUse);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (activeProblem) {
     return (
@@ -561,42 +602,74 @@ Use only standard ASCII. No markdown, no code blocks, no explanation outside the
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
         className="relative bg-card border border-border rounded-2xl p-6 space-y-5 overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 bg-primary/4 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Topic</label>
-            <select value={topic} onChange={(e) => { setTopic(e.target.value); setGenerated(false); setProblems([]); }}
-              className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-              <option value="">Select a topic…</option>
-              {DSA_TOPICS.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+
+        {/* Topic multi-select chips */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Topics
+            </label>
+            {topics.length > 0 && (
+              <button onClick={() => { setTopics([]); setGenerated(false); setProblems([]); }}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                Clear all
+              </button>
+            )}
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Experience Level</label>
-            <div className="flex gap-2">
-              {EXPERIENCE_LEVELS.map((lvl) => (
-                <button key={lvl.value} onClick={() => { setExperience(lvl.value); setGenerated(false); setProblems([]); }}
-                  className={cn("flex-1 h-10 rounded-lg border text-xs font-medium transition-all duration-200",
-                    experience === lvl.value
-                      ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
-                      : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                  )}>
-                  {lvl.label}
-                </button>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {DSA_TOPICS.map((t) => (
+              <button key={t} onClick={() => toggleTopic(t)}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl border text-xs font-medium transition-all duration-200",
+                  topics.includes(t)
+                    ? "bg-primary/15 border-primary/50 text-primary shadow-sm"
+                    : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                )}>
+                {t}
+              </button>
+            ))}
+          </div>
+          {topics.length === 0 && (
+            <p className="text-xs text-muted-foreground">Select one or more topics to practice</p>
+          )}
+          {topics.length > 0 && (
+            <p className="text-xs text-primary font-medium">{topics.length} topic{topics.length > 1 ? "s" : ""} selected</p>
+          )}
+        </div>
+
+        {/* Experience level */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Experience Level</label>
+          <div className="flex gap-2">
+            {EXPERIENCE_LEVELS.map((lvl) => (
+              <button key={lvl.value} onClick={() => { setExperience(lvl.value); setGenerated(false); setProblems([]); }}
+                className={cn("flex-1 h-10 rounded-lg border text-xs font-medium transition-all duration-200",
+                  experience === lvl.value
+                    ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                    : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                )}>
+                {lvl.label}
+              </button>
+            ))}
           </div>
         </div>
-        <Button onClick={generate} disabled={!topic || loading} className="relative w-full gap-2 overflow-hidden group/btn">
+
+        {genError && (
+          <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-3">
+            <XCircle className="h-4 w-4 shrink-0" />{genError}
+          </div>
+        )}
+        <Button onClick={() => generate()} disabled={topics.length === 0 || loading} className="relative w-full gap-2 overflow-hidden group/btn">
           <span className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          {loading ? "Generating problems…" : "Generate DSA Problems"}
+          {loading ? "Generating problems…" : `Generate DSA Problems${topics.length > 1 ? ` (${topics.length} topics)` : ""}`}
         </Button>
       </motion.div>
 
       {/* Problems list */}
       <AnimatePresence mode="wait">
         {problems.length > 0 && (
-          <motion.div key={topic + experience} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div key={topics.join(",") + experience} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             {/* Header row */}
             <motion.div variants={fadeUp} initial="hidden" animate="visible"
               className="flex items-center justify-between mb-4 gap-3 flex-wrap">
@@ -620,7 +693,7 @@ Use only standard ASCII. No markdown, no code blocks, no explanation outside the
                   </button>
                 ))}
               </div>
-              <button onClick={generate} disabled={loading}
+              <button onClick={() => generate()} disabled={loading}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
                 <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} /> Regenerate
               </button>
@@ -646,7 +719,7 @@ Use only standard ASCII. No markdown, no code blocks, no explanation outside the
                 className="text-center py-12 text-muted-foreground">
                 <CheckCircle2 className="h-10 w-10 mx-auto mb-3 text-emerald-500/40" />
                 <p className="text-sm font-medium">All problems solved!</p>
-                <button onClick={generate} className="text-xs text-primary hover:underline mt-1">Generate new problems</button>
+                <button onClick={() => generate()} className="text-xs text-primary hover:underline mt-1">Generate new problems</button>
               </motion.div>
             )}
           </motion.div>
@@ -659,7 +732,7 @@ Use only standard ASCII. No markdown, no code blocks, no explanation outside the
           <div className="animate-float">
             <Code2 className="h-12 w-12 mx-auto mb-4 opacity-20" />
           </div>
-          <p className="text-sm">Select a topic and experience level to generate DSA problems.</p>
+          <p className="text-sm">Select one or more topics and generate DSA problems.</p>
         </motion.div>
       )}
     </div>
@@ -928,7 +1001,7 @@ function BookmarkCard({ item, index, onRemove }) {
 
 // ── Bookmarks Tab ─────────────────────────────────────────────────
 
-function BookmarksTab({ isActive }) {
+function TheoryBookmarks({ isActive }) {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -966,7 +1039,7 @@ function BookmarksTab({ isActive }) {
         <div className="animate-float">
           <Bookmark className="h-12 w-12 mx-auto mb-4 opacity-20" />
         </div>
-        <p className="text-sm font-medium">No bookmarks yet.</p>
+        <p className="text-sm font-medium">No theory bookmarks yet.</p>
         <p className="text-xs mt-1 opacity-70">Save questions from the Interview Q&amp;A tab to study them here.</p>
       </motion.div>
     );
@@ -974,11 +1047,9 @@ function BookmarksTab({ isActive }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          {items.length} saved question{items.length !== 1 ? "s" : ""}
-        </p>
-      </div>
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        {items.length} saved question{items.length !== 1 ? "s" : ""}
+      </p>
       <motion.div variants={listContainer} initial="hidden" animate="visible" className="space-y-3">
         {items.map((b, i) => (
           <BookmarkCard key={b.id} item={b} index={i} onRemove={() => handleRemove(b)} />
@@ -988,16 +1059,191 @@ function BookmarksTab({ isActive }) {
   );
 }
 
+function CodingBookmarkCard({ entry, onRemove }) {
+  // Support both new format { seed, challenge, code_js, code_py } and old format { ...challengeFields }
+  const challenge = entry.challenge ?? entry;
+  const [expanded, setExpanded] = useState(false);
+  const [lang, setLang] = useState("javascript");
+  const [testResults, setTestResults] = useState(null);
+  const [compileError, setCompileError] = useState(null);
+
+  // Store code per language locally for this card
+  const [codeJs, setCodeJs] = useState(entry.code_js || challenge?.starterCode?.javascript || "");
+  const [codePy, setCodePy] = useState(entry.code_py || challenge?.starterCode?.python || "");
+  const derivedCode = lang === "python" ? codePy : codeJs;
+  const setDerivedCode = lang === "python" ? setCodePy : setCodeJs;
+
+  return (
+    <div className="border rounded-xl overflow-hidden bg-card">
+      <div
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <div className="flex items-center gap-3">
+          <Code2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <div>
+            <p className="font-semibold text-sm">{challenge?.title || "Coding Challenge"}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {challenge?.category} · {challenge?.difficulty}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", expanded && "rotate-180")} />
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div className="border-t p-4 space-y-4">
+              <ChallengeDescription challenge={challenge} />
+              <ChallengeIDE
+                challenge={challenge}
+                code={derivedCode}
+                setCode={setDerivedCode}
+                lang={lang}
+                onLangChange={setLang}
+                testResults={testResults}
+                setTestResults={setTestResults}
+                compileError={compileError}
+                setCompileError={setCompileError}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function CodingBookmarks() {
+  const [items, setItems] = useState(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("challenge_bookmarks");
+      setItems(raw ? JSON.parse(raw) : []);
+    } catch {
+      setItems([]);
+    }
+  }, []);
+
+  const handleRemove = (seed) => {
+    setItems((prev) => {
+      const next = prev.filter((b) => b.seed !== seed);
+      localStorage.setItem("challenge_bookmarks", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  if (items === null) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!items.length) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+        className="text-center py-20 text-muted-foreground">
+        <div className="animate-float">
+          <Code2 className="h-12 w-12 mx-auto mb-4 opacity-20" />
+        </div>
+        <p className="text-sm font-medium">No coding bookmarks yet.</p>
+        <p className="text-xs mt-1 opacity-70">Bookmark challenges from the Challenges tab to practice them here.</p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        {items.length} saved challenge{items.length !== 1 ? "s" : ""}
+      </p>
+      <div className="space-y-3">
+        {items.map((entry, i) => (
+          <CodingBookmarkCard key={entry.seed || entry.title || i} entry={entry} onRemove={() => handleRemove(entry.seed)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const BOOKMARK_SUBTABS = [
+  { id: "theory", label: "Theory", icon: BrainCircuit },
+  { id: "coding", label: "Coding", icon: Code2 },
+];
+
+function BookmarksTab({ isActive }) {
+  const [subTab, setSubTab] = useSessionState("bookmarks_subtab", "theory");
+
+  return (
+    <div className="space-y-6">
+      {/* Sub-tab switcher */}
+      <div className="flex gap-1 bg-secondary rounded-xl p-1 w-fit">
+        {BOOKMARK_SUBTABS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setSubTab(id)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+              subTab === id
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {subTab === "theory" && <TheoryBookmarks isActive={isActive} />}
+      {subTab === "coding" && <CodingBookmarks />}
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: "qa",        label: "Interview Q&A", icon: BrainCircuit },
-  { id: "dsa",       label: "DSA Practice",  icon: Code2 },
-  { id: "bookmarks", label: "Bookmarks",     icon: Bookmark },
+  { id: "qa",         label: "Interview Q&A",  icon: BrainCircuit },
+  { id: "dsa",        label: "DSA Practice",   icon: Code2 },
+  { id: "challenges", label: "Challenges",     icon: Sparkles },
+  { id: "bookmarks",  label: "Bookmarks",      icon: Bookmark },
 ];
 
-export default function QuestionsPage() {
-  const [tab, setTab] = useSessionState("questions_tab", "qa");
+function QuestionsContent() {
+  const searchParams  = useSearchParams();
+  const urlTab        = searchParams.get("tab");
+  const urlTopics     = searchParams.get("topics")
+    ? searchParams.get("topics").split(",").map((t) => decodeURIComponent(t.trim())).filter(Boolean)
+    : [];
+  const urlExperience  = searchParams.get("experience") || null;
+  const urlCategory    = searchParams.get("category")   || null;
+  const urlSeed        = searchParams.get("seed")        || null;
+
+  const [tab, setTab] = useSessionState("questions_tab", urlTab || "qa");
+
+  // If URL specifies a tab, override session state on first render
+  useEffect(() => {
+    if (urlTab) setTab(urlTab);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16">
@@ -1044,8 +1290,25 @@ export default function QuestionsPage() {
 
       {/* Tab content — always mounted to preserve state */}
       <div className={tab === "qa" ? undefined : "hidden"}><InterviewQATab /></div>
-      <div className={tab === "dsa" ? undefined : "hidden"}><DSATab /></div>
+      <div className={tab === "dsa" ? undefined : "hidden"}>
+        <DSATab initialTopics={urlTopics} initialExperience={urlExperience} autoGenerate={urlTopics.length > 0} />
+      </div>
+      <div className={tab === "challenges" ? undefined : "hidden"}>
+        <ChallengesTab
+          initialCategory={urlCategory}
+          initialLevel={urlExperience}
+          seed={urlSeed}
+        />
+      </div>
       <div className={tab === "bookmarks" ? undefined : "hidden"}><BookmarksTab isActive={tab === "bookmarks"} /></div>
     </div>
+  );
+}
+
+export default function QuestionsPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <QuestionsContent />
+    </Suspense>
   );
 }

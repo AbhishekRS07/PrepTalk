@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
-import { LogOut, Pencil, Loader2, CheckCircle2, Menu, X, MapPin } from "lucide-react";
+import { LogOut, Pencil, Loader2, CheckCircle2, Menu, X, MapPin, CalendarDays, BookOpen, Settings, Brain, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const navLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/questions", label: "Questions" },
+  { href: "/dashboard/interviews", label: "Interviews" },
   { href: "/dashboard/analytics", label: "Analytics" },
   { href: "/dashboard/leaderboard", label: "Leaderboard" },
   { href: "/dashboard/upgrade", label: "Upgrade" },
@@ -156,6 +157,46 @@ const Header = () => {
                       <MapPin className="h-4 w-4 text-primary" />
                       My Roadmap
                     </Link>
+                    <Link
+                      href="/dashboard/interviews"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                    >
+                      <CalendarDays className="h-4 w-4 text-primary" />
+                      Interview Tracker
+                    </Link>
+                    <Link
+                      href="/dashboard/journal"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                    >
+                      <BookOpen className="h-4 w-4 text-primary" />
+                      Interview Journal
+                    </Link>
+                    <Link
+                      href="/dashboard/behavioral"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                    >
+                      <Brain className="h-4 w-4 text-primary" />
+                      Behavioral Coach
+                    </Link>
+                    <Link
+                      href="/dashboard/resume"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                    >
+                      <FileText className="h-4 w-4 text-primary" />
+                      Resume Analyzer
+                    </Link>
+                    <Link
+                      href="/dashboard/settings"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                    >
+                      <Settings className="h-4 w-4 text-muted-foreground" />
+                      Settings
+                    </Link>
 
                     {!editingUsername ? (
                       <button
@@ -268,6 +309,22 @@ const Header = () => {
                 >
                   <MapPin className="h-4 w-4 text-primary" />
                   My Roadmap
+                </Link>
+                <Link
+                  href="/dashboard/interviews"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm hover:bg-secondary transition-colors"
+                >
+                  <CalendarDays className="h-4 w-4 text-primary" />
+                  Interview Tracker
+                </Link>
+                <Link
+                  href="/dashboard/settings"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm hover:bg-secondary transition-colors"
+                >
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                  Settings
                 </Link>
                 <button
                   onClick={() => { setMobileOpen(false); setMenuOpen(true); }}

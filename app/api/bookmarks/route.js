@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -16,9 +17,8 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user, supabase, unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const { question, answer, profile } = await req.json();
   if (!question) return NextResponse.json({ error: "Missing question" }, { status: 400 });

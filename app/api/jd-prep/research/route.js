@@ -1,6 +1,7 @@
-import { createClient } from "@/utils/supabase/server";
+import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { runPrompt } from "@/lib/langchain";
+import { cleanJson } from "@/lib/utils";
 import { tavily } from "@tavily/core";
 
 const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY });
@@ -22,9 +23,7 @@ Return this exact JSON shape:
 }`;
 
   const raw = await runPrompt(prompt);
-  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  return JSON.parse(match?.[0] || cleaned);
+  return JSON.parse(cleanJson(raw));
 }
 
 // ── Step 2: Web search for real interview questions ───────────────
@@ -105,23 +104,13 @@ Reply ONLY with a valid JSON array. Each object must have:
 No markdown, no explanation. Just the JSON array.`;
 
   const raw = await runPrompt(prompt);
-  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
-
-  // Try direct parse
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const match = cleaned.match(/\[[\s\S]*\]/);
-    if (!match) throw new Error("Could not parse question list");
-    return JSON.parse(match[0]);
-  }
+  return JSON.parse(cleanJson(raw, "array"));
 }
 
 // ── Route handler ─────────────────────────────────────────────────
 export async function POST(req) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const { jd, company: manualCompany } = await req.json();
   if (!jd || jd.trim().length < 50) {

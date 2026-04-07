@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { fadeUp, listContainer as stagger } from "@/lib/animations";
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -29,19 +30,6 @@ const TYPE_META = {
   mock:   { label: "Mock",   color: "#8b5cf6", bg: "#8b5cf620" },
   live:   { label: "Live",   color: "#10b981", bg: "#10b98120" },
   resume: { label: "Resume", color: "#f59e0b", bg: "#f59e0b20" },
-};
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.45, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
-  }),
-};
-
-const stagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.07 } },
 };
 
 // ── Custom Tooltip ────────────────────────────────────────────────

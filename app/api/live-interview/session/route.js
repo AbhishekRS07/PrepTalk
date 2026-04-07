@@ -1,10 +1,9 @@
-import { createClient } from "@/utils/supabase/server";
+import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 export async function GET(request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { supabase, unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const { searchParams } = new URL(request.url);
   const mockId = searchParams.get("mockId");

@@ -1,11 +1,11 @@
-import { createClient } from "@/utils/supabase/server";
+import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { runPrompt } from "@/lib/langchain";
+import { cleanJson } from "@/lib/utils";
 
 export async function POST(req) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user, supabase, unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const { currentStatus, targetRole } = await req.json();
   if (!currentStatus || !targetRole)
@@ -60,8 +60,7 @@ Available PrepTalk features and their paths:
 Map each milestone to the single most relevant PrepTalk feature. Make tasks highly specific to what a "${targetRole}" interview looks like, and calibrated to the gap between their current level ("${currentStatus}") and the target. Consider the skill gap — a service company employee targeting a product role needs different preparation than someone already in a product company.`;
 
   const raw = await runPrompt(prompt);
-  const cleaned = raw.replace(/```json/g, "").replace(/```/g, "").trim();
-  const roadmap = JSON.parse(cleaned);
+  const roadmap = JSON.parse(cleanJson(raw));
 
   // Save to DB (upsert — one roadmap per user)
   await supabase.from("roadmap").upsert({

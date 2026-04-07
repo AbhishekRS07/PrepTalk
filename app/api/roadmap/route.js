@@ -1,11 +1,10 @@
-import { createClient } from "@/utils/supabase/server";
+import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 // GET — fetch the user's current roadmap
 export async function GET() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user, supabase, unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const { data } = await supabase
     .from("roadmap")
@@ -19,9 +18,8 @@ export async function GET() {
 
 // PATCH — update completed milestone IDs
 export async function PATCH(req) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user, supabase, unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const { completedIds } = await req.json();
 
@@ -36,9 +34,8 @@ export async function PATCH(req) {
 
 // DELETE — reset roadmap so user can regenerate
 export async function DELETE() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user, supabase, unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   await supabase.from("roadmap").delete().eq("email", user.email);
   return NextResponse.json({ ok: true });

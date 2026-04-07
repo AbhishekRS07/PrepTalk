@@ -1,6 +1,7 @@
-import { createClient } from "@/utils/supabase/server";
+import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { ChatGroq } from "@langchain/groq";
+import { getModel } from "@/lib/langchain";
+import { cleanJson } from "@/lib/utils";
 import { HumanMessage, AIMessage, SystemMessage } from "@langchain/core/messages";
 
 const SYSTEM_PROMPT = (role, experience, techStack) => `You are a senior technical interviewer conducting a live interview for a ${role} position.
@@ -36,17 +37,12 @@ Now generate a structured debrief as a JSON object with exactly this shape:
 Return ONLY valid JSON. No markdown, no explanation.`;
 
 export async function POST(request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const { messages, role, experience, techStack, action } = await request.json();
 
-  const model = new ChatGroq({
-    apiKey: process.env.GROQ_API_KEY,
-    model: "llama-3.3-70b-versatile",
-    temperature: 0.75,
-  });
+  const model = getModel();
 
   // Generate debrief
   if (action === "debrief") {
@@ -59,12 +55,8 @@ export async function POST(request) {
       new HumanMessage(DEBRIEF_PROMPT(role, experience, techStack, conversation)),
     ]);
 
-    let raw = res.content.trim();
-    // Strip markdown code fences if present
-    raw = raw.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
-
     try {
-      const debrief = JSON.parse(raw);
+      const debrief = JSON.parse(cleanJson(res.content.trim()));
       return NextResponse.json({ debrief });
     } catch {
       return NextResponse.json({ error: "Failed to parse debrief" }, { status: 500 });

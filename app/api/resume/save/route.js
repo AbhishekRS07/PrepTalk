@@ -1,12 +1,11 @@
-import { createClient } from "@/utils/supabase/server";
+import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { extractText } from "unpdf";
 
 // POST: parse PDF and save resume text + name to user's profile
 export async function POST(req) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user, supabase, unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const formData = await req.formData();
   const file = formData.get("file");
@@ -40,9 +39,8 @@ export async function POST(req) {
 
 // DELETE: remove saved resume from profile
 export async function DELETE(req) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user, supabase, unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const { error } = await supabase
     .from("profiles")

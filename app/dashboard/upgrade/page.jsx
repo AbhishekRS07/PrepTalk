@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Check, Sparkles, Zap, Crown } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { cn } from "@/lib/utils";
+import { fadeUp } from "@/lib/animations";
 
 const plans = [
   {
@@ -105,11 +106,6 @@ const faqs = [
   },
 ];
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  show: (i) => ({ opacity: 1, y: 0, transition: { delay: i * 0.08, duration: 0.4 } }),
-};
-
 export default function UpgradePage() {
   return (
     <div className="max-w-5xl mx-auto space-y-16 pb-16">
@@ -138,7 +134,7 @@ export default function UpgradePage() {
               key={plan.name}
               custom={i}
               initial="hidden"
-              animate="show"
+              animate="visible"
               variants={fadeUp}
               className={cn(
                 "relative bg-card border rounded-3xl p-7 flex flex-col gap-6",
@@ -207,7 +203,7 @@ export default function UpgradePage() {
               key={faq.q}
               custom={i}
               initial="hidden"
-              whileInView="show"
+              whileInView="visible"
               viewport={{ once: true }}
               variants={fadeUp}
               className="bg-card border border-border rounded-2xl p-5 space-y-1.5"

@@ -1,11 +1,10 @@
-import { createClient } from "@/utils/supabase/server";
+import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 // POST /api/share — generate or return existing share token for a mockId
 export async function POST(req) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { user, supabase, unauthorized } = await requireUser();
+  if (unauthorized) return unauthorized;
 
   const { mockId } = await req.json();
   if (!mockId) return NextResponse.json({ error: "Missing mockId" }, { status: 400 });

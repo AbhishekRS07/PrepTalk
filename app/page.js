@@ -20,6 +20,12 @@ import {
   ChevronDown,
   FileText,
   TrendingUp,
+  MapPin,
+  Check,
+  CalendarCheck,
+  Zap,
+  ScanText,
+  Users,
 } from "lucide-react";
 
 // Load 3D canvas only on client — no SSR
@@ -74,6 +80,31 @@ const features = [
     icon: Code2,
     title: "DSA Practice + IDE",
     desc: "Solve AI-generated DSA problems by topic and experience — with a built-in VS Code-style editor and live code execution.",
+  },
+  {
+    icon: MapPin,
+    title: "AI Learning Roadmap",
+    desc: "Get a personalized step-by-step preparation plan based on your current role and target job — with milestone tracking and PrepTalk feature links at every step.",
+  },
+  {
+    icon: CalendarCheck,
+    title: "Interview Tracker",
+    desc: "Log upcoming and completed interviews. Get a day-by-day prep plan with theory tasks, DSA problems, and coding challenges automatically scheduled to your interview date.",
+  },
+  {
+    icon: Zap,
+    title: "Coding Challenges",
+    desc: "Practice real-world business logic problems — not just LeetCode. AI generates scenario-based challenges with a full Monaco IDE, test runner, and hints panel.",
+  },
+  {
+    icon: ScanText,
+    title: "Resume ATS Analyzer",
+    desc: "Upload your resume and get an ATS score, keyword gap analysis, section-by-section feedback, and a priority-sorted action plan — with an optional JD match mode.",
+  },
+  {
+    icon: Users,
+    title: "Behavioral Coach",
+    desc: "Master the STAR method with AI-powered behavioral interview coaching tailored to your role. Practice common leadership, conflict, and situational questions.",
   },
 ];
 
@@ -479,8 +510,8 @@ function Features() {
             Everything you need to prepare
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            One platform, six powerful tools to transform how you practice for
-            technical interviews.
+            One platform, eleven powerful tools to transform how you prepare for
+            every stage of the interview process.
           </p>
         </motion.div>
 
@@ -489,6 +520,136 @@ function Features() {
           {features.map((f, i) => (
             <FeatureCard key={f.title} feature={f} index={i} />
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Roadmap Spotlight ──────────────────────────────────────────
+function RoadmapSpotlight({ onGetStarted }) {
+  const roadmapSteps = [
+    { label: "Tell us your current role & target job" },
+    { label: "AI builds a personalized 5–10 milestone plan" },
+    { label: "Each milestone links to the right PrepTalk feature" },
+    { label: "Check off milestones as you complete them" },
+    { label: "Celebrate — and walk into your interview ready" },
+  ];
+
+  return (
+    <section className="relative py-28 px-6 overflow-hidden">
+      {/* Subtle grid */}
+      <div className="absolute inset-0 dot-grid opacity-30 dark:opacity-15 pointer-events-none" />
+
+      <div className="max-w-6xl mx-auto relative">
+        <div className="grid md:grid-cols-2 gap-16 items-center">
+          {/* Left: text */}
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-5 leading-tight">
+              Your personal{" "}
+              <span className="gradient-text">learning roadmap</span>
+            </h2>
+            <p className="text-muted-foreground leading-relaxed mb-8">
+              Don&apos;t know where to start? Tell PrepTalk where you are and where you want to go — the AI generates a step-by-step preparation plan calibrated to your exact skill gap, with every milestone linked to a specific feature.
+            </p>
+
+            <ul className="space-y-3 mb-10">
+              {roadmapSteps.map((s, i) => (
+                <motion.li
+                  key={i}
+                  variants={fadeUp}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  custom={i * 0.5}
+                  className="flex items-center gap-3 text-sm"
+                >
+                  <span className="h-6 w-6 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
+                    <Check className="h-3 w-3 text-primary" strokeWidth={3} />
+                  </span>
+                  {s.label}
+                </motion.li>
+              ))}
+            </ul>
+
+            <Button onClick={onGetStarted} className="gap-2 px-8 h-12 glow-primary shadow-2xl shadow-primary/30">
+              Get my roadmap
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </motion.div>
+
+          {/* Right: mock roadmap card */}
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            custom={1}
+            className="relative"
+          >
+            {/* Glow behind card */}
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/15 to-emerald-500/10 blur-3xl rounded-3xl" />
+
+            <div className="relative rounded-2xl border border-border bg-card p-6 space-y-4 shadow-xl">
+              {/* Header */}
+              <div className="flex items-center gap-4 pb-4 border-b border-border">
+                <div className="relative h-14 w-14 shrink-0">
+                  <svg viewBox="0 0 56 56" className="h-14 w-14 -rotate-90">
+                    <circle cx={28} cy={28} r={22} fill="none" stroke="currentColor" strokeWidth={5} className="text-border/60" />
+                    <circle cx={28} cy={28} r={22} fill="none" strokeWidth={5} strokeLinecap="round"
+                      strokeDasharray={138} strokeDashoffset={69}
+                      stroke="url(#lp-grad)" />
+                    <defs>
+                      <linearGradient id="lp-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#8b5cf6" />
+                        <stop offset="100%" stopColor="#10b981" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-xs font-black">50%</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-violet-400 font-bold mb-0.5">TARGET ROLE</p>
+                  <p className="font-black text-base truncate">Senior Frontend Dev</p>
+                  <div className="h-1.5 rounded-full bg-border/50 mt-2 overflow-hidden">
+                    <div className="h-full w-1/2 rounded-full bg-gradient-to-r from-violet-500 to-emerald-500" style={{ boxShadow: "0 0 8px rgba(139,92,246,0.5)" }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Mock milestones */}
+              {[
+                { done: true,  label: "Update resume & profiles",    tag: "Done" },
+                { done: true,  label: "Core React patterns deep-dive", tag: "Done" },
+                { done: false, label: "System design fundamentals",   tag: "Up next", current: true },
+                { done: false, label: "Mock interview × 5 sessions",  tag: "" },
+                { done: false, label: "Behavioural & leadership prep", tag: "" },
+              ].map((m, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${
+                    m.done ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                    : m.current ? "border-2 border-primary bg-primary/10"
+                    : "border-2 border-border bg-card"
+                  }`}>
+                    {m.done && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+                    {m.current && <div className="h-2 w-2 rounded-full bg-primary" />}
+                  </div>
+                  <span className={`text-sm flex-1 ${m.done ? "line-through text-muted-foreground/60" : ""}`}>{m.label}</span>
+                  {m.tag && (
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      m.done ? "text-emerald-400 bg-emerald-500/10"
+                      : "text-primary bg-primary/10 border border-primary/20"
+                    }`}>{m.tag}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>
@@ -587,6 +748,11 @@ function HowItWorks({ onGetStarted }) {
                   "Per-answer AI rating out of 10 with improvement tips",
                   "Interview Q&A bank by profile & experience",
                   "DSA problems with built-in IDE & code execution",
+                  "AI learning roadmap with milestone tracking",
+                  "Interview Tracker with day-by-day prep plans",
+                  "Coding Challenges — scenario-based with live test runner",
+                  "Resume ATS Analyzer with keyword gap analysis",
+                  "Behavioral Coach for STAR-method practice",
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-sm">
                     <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
@@ -651,6 +817,7 @@ export default function Home() {
       <Hero onGetStarted={handleGetStarted} />
       <MarqueeBand />
       <Features />
+      <RoadmapSpotlight onGetStarted={handleGetStarted} />
       <HowItWorks onGetStarted={handleGetStarted} />
       <Footer />
     </div>
