@@ -56,6 +56,7 @@ function useSTT(onTranscript) {
   const [listening, setListening] = useState(false);
   const [supported, setSupported] = useState(false);
   const recRef = useRef(null);
+  const finalRef = useRef(""); // accumulates confirmed final segments
 
   useEffect(() => {
     setSupported(
@@ -67,18 +68,30 @@ function useSTT(onTranscript) {
   const start = useCallback(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return;
+    finalRef.current = "";
     const rec = new SR();
-    rec.continuous = false;
+    rec.continuous = true;      // ← keep recording until user clicks stop
     rec.interimResults = true;
     rec.lang = "en-US";
     rec.onresult = (e) => {
-      const transcript = Array.from(e.results)
-        .map((r) => r[0].transcript)
-        .join("");
-      onTranscript(transcript);
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) {
+          finalRef.current += t + " ";
+        } else {
+          interim += t;
+        }
+      }
+      onTranscript((finalRef.current + interim).trim());
     };
-    rec.onerror = () => setListening(false);
-    rec.onend = () => setListening(false);
+    rec.onerror = (e) => {
+      if (e.error !== "aborted") setListening(false);
+    };
+    rec.onend = () => {
+      // Only update state if this rec instance is still the active one
+      if (recRef.current === rec) setListening(false);
+    };
     rec.start();
     recRef.current = rec;
     setListening(true);
@@ -86,6 +99,7 @@ function useSTT(onTranscript) {
 
   const stop = useCallback(() => {
     recRef.current?.stop();
+    recRef.current = null;
     setListening(false);
   }, []);
 

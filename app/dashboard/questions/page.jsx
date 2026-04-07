@@ -928,18 +928,19 @@ function BookmarkCard({ item, index, onRemove }) {
 
 // ── Bookmarks Tab ─────────────────────────────────────────────────
 
-function BookmarksTab() {
+function BookmarksTab({ isActive }) {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.email) return;
+    if (!user?.email || !isActive) return;
+    setLoading(true);
     fetch("/api/bookmarks")
       .then((r) => r.json())
       .then((data) => { setItems(Array.isArray(data) ? data : []); setLoading(false); })
       .catch(() => setLoading(false));
-  }, [user?.email]);
+  }, [user?.email, isActive]);
 
   const handleRemove = async (bookmark) => {
     await fetch("/api/bookmarks", {
@@ -1044,7 +1045,7 @@ export default function QuestionsPage() {
       {/* Tab content — always mounted to preserve state */}
       <div className={tab === "qa" ? undefined : "hidden"}><InterviewQATab /></div>
       <div className={tab === "dsa" ? undefined : "hidden"}><DSATab /></div>
-      <div className={tab === "bookmarks" ? undefined : "hidden"}><BookmarksTab /></div>
+      <div className={tab === "bookmarks" ? undefined : "hidden"}><BookmarksTab isActive={tab === "bookmarks"} /></div>
     </div>
   );
 }
