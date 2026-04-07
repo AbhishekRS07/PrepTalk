@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+ import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import { runPrompt } from "@/lib/langchain";
 import { v4 as uuidv4 } from "uuid";

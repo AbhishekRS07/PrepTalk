@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
-import { LogOut, Pencil, Loader2, CheckCircle2, Menu, X } from "lucide-react";
+import { LogOut, Pencil, Loader2, CheckCircle2, Menu, X, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -148,6 +148,15 @@ const Header = () => {
                       <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                     </div>
 
+                    <Link
+                      href="/dashboard/roadmap"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                    >
+                      <MapPin className="h-4 w-4 text-primary" />
+                      My Roadmap
+                    </Link>
+
                     {!editingUsername ? (
                       <button
                         onClick={() => setEditingUsername(true)}
@@ -252,6 +261,14 @@ const Header = () => {
 
               {/* Drawer footer */}
               <div className="px-3 py-4 border-t border-border shrink-0 space-y-2">
+                <Link
+                  href="/dashboard/roadmap"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm hover:bg-secondary transition-colors"
+                >
+                  <MapPin className="h-4 w-4 text-primary" />
+                  My Roadmap
+                </Link>
                 <button
                   onClick={() => { setMobileOpen(false); setMenuOpen(true); }}
                   className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm hover:bg-secondary transition-colors"
