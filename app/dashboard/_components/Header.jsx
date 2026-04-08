@@ -157,6 +157,14 @@ const Header = () => {
                       My Roadmap
                     </Link>
                     <Link
+                      href="/dashboard/interviews"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
+                    >
+                      <CalendarDays className="h-4 w-4 text-primary" />
+                      Interview Tracker
+                    </Link>
+                    <Link
                       href="/dashboard/journal"
                       onClick={() => setMenuOpen(false)}
                       className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors"
@@ -300,6 +308,14 @@ const Header = () => {
                 >
                   <MapPin className="h-4 w-4 text-primary" />
                   My Roadmap
+                </Link>
+                <Link
+                  href="/dashboard/interviews"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm hover:bg-secondary transition-colors"
+                >
+                  <CalendarDays className="h-4 w-4 text-primary" />
+                  Interview Tracker
                 </Link>
                 <Link
                   href="/dashboard/settings"
