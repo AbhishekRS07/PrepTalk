@@ -7,7 +7,7 @@ import { tavily } from "@tavily/core";
 const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY });
 
 // ── Step 1: Extract company / role / stack from JD ────────────────
-async function extractJDMeta(jdText) {
+async function extractJDMeta(jdText, manualCompany) {
   const prompt = `Extract structured information from this job description. Reply ONLY with valid JSON, no markdown.
 
 Job Description:
@@ -23,7 +23,9 @@ Return this exact JSON shape:
 }`;
 
   const raw = await runPrompt(prompt);
-  return JSON.parse(cleanJson(raw));
+  const meta = JSON.parse(cleanJson(raw));
+  if (manualCompany) meta.company = manualCompany;
+  return meta;
 }
 
 // ── Step 2: Web search for real interview questions ───────────────
@@ -48,7 +50,6 @@ async function searchInterviewQuestions(company, role, techStack) {
     )
   );
 
-  // Combine all result content
   const snippets = [];
   for (const r of results) {
     if (r.status === "fulfilled") {
@@ -66,39 +67,55 @@ async function searchInterviewQuestions(company, role, techStack) {
   return snippets;
 }
 
-// ── Step 3: Synthesize question bank with LLM ─────────────────────
-async function synthesizeQuestions(meta, snippets, jdText) {
-  const { company, role, seniority, techStack, keyTopics } = meta;
+// ── Step 3: Synthesize unified question bank ──────────────────────
+async function synthesizeQuestions(entries) {
+  // entries: [{ meta, snippets, jd }]
+  const companyNames = entries.map((e) => e.meta.company || "Unknown Company");
 
-  const searchContext = snippets
-    .slice(0, 8)
-    .map((s, i) => `[Source ${i + 1}: ${s.title} — ${s.source}]\n${s.content}`)
-    .join("\n\n");
-
-  const prompt = `You are a senior interviewer. Using the job description and real interview experiences found online, create a curated question bank for a candidate preparing for ${company ? `${company}'s` : "a"} ${seniority} ${role} role.
-
-Job Description Summary:
-${jdText.slice(0, 1500)}
-
-Real interview experiences and questions found online:
-${searchContext || "No specific results found — generate based on JD and role."}
-
+  const companySections = entries
+    .map((e, i) => {
+      const { company, role, seniority, techStack, keyTopics } = e.meta;
+      const searchContext = e.snippets
+        .slice(0, 5)
+        .map((s, j) => `[Source ${j + 1}: ${s.title}]\n${s.content}`)
+        .join("\n\n");
+      return `--- Company ${i + 1}: ${company || "Unknown"} ---
+Role: ${seniority} ${role}
 Tech Stack: ${(techStack || []).join(", ")}
 Key Topics: ${(keyTopics || []).join(", ")}
+JD Summary: ${e.jd.slice(0, 1000)}
+Real interview data:
+${searchContext || "No web results — generate from JD."}`;
+    })
+    .join("\n\n");
 
-Generate 15 high-quality interview questions. Mix:
-- Questions directly sourced or paraphrased from the search results (mark these as sourced)
-- Questions tailored to the JD's specific requirements
-- At least 2 system design questions if seniority is Senior/Staff/Lead
-- At least 2 behavioral/situational questions
+  const isMulti = entries.length > 1;
+
+  const prompt = `You are a senior interviewer helping a candidate who is applying to ${entries.length} ${isMulti ? "companies" : "company"} simultaneously.
+
+${companySections}
+
+Generate a unified question bank of ${isMulti ? "20-28" : "15"} high-quality interview questions.
+
+${isMulti ? `Rules for multi-company mode:
+- PRIORITIZE common questions: if a topic/skill is required by 2+ companies, make one well-crafted question and mark it as common
+- Deduplicate aggressively: never repeat the same concept twice even if phrased differently
+- Include at least 1 system design and 1 behavioral question
+- Each question must list ALL companies it is relevant to in the "companies" array
+- "isCommon" must be true if companies.length >= 2
+- Still include 2-3 company-specific questions per company for unique requirements` : `Rules:
+- Mix sourced questions (from web results) and JD-tailored questions
+- Include at least 1 system design and 1 behavioral question`}
 
 Reply ONLY with a valid JSON array. Each object must have:
 {
   "question": "the question text",
   "answer": "detailed model answer (3-5 sentences)",
-  "topic": "one of: System Design | JavaScript | React | Node.js | Databases | DSA | Behavioral | DevOps | TypeScript | Python | or infer from context",
+  "topic": "System Design | JavaScript | React | Node.js | Databases | DSA | Behavioral | DevOps | TypeScript | Python | or infer from context",
   "difficulty": "Easy | Medium | Hard",
-  "sourced": true or false (true if from search results, false if AI-generated from JD)
+  "sourced": true or false,
+  "companies": ${isMulti ? `["CompanyA", "CompanyB"]  — list the exact company names this question is relevant to` : `["${companyNames[0] || "Company"}"]`},
+  "isCommon": ${isMulti ? "true if companies.length >= 2, false otherwise" : "false"}
 }
 
 No markdown, no explanation. Just the JSON array.`;
@@ -112,43 +129,69 @@ export async function POST(req) {
   const { unauthorized } = await requireUser();
   if (unauthorized) return unauthorized;
 
-  const { jd, company: manualCompany } = await req.json();
-  if (!jd || jd.trim().length < 50) {
-    return NextResponse.json({ error: "Job description is too short." }, { status: 400 });
+  const body = await req.json();
+
+  // Support both legacy single { jd, company } and new { companies: [{jd, company}] }
+  let companiesInput;
+  if (body.companies) {
+    companiesInput = body.companies;
+  } else {
+    companiesInput = [{ jd: body.jd, company: body.company }];
   }
 
-  // Step 1: Extract meta
-  let meta;
-  try {
-    meta = await extractJDMeta(jd);
-    if (manualCompany) meta.company = manualCompany;
-  } catch {
-    meta = { company: manualCompany || null, role: "Software Engineer", seniority: "Mid", techStack: [], keyTopics: [] };
+  if (!companiesInput.length) {
+    return NextResponse.json({ error: "No companies provided." }, { status: 400 });
   }
 
-  // Step 2: Search web
-  let snippets = [];
-  try {
-    snippets = await searchInterviewQuestions(meta.company, meta.role, meta.techStack);
-  } catch (err) {
-    console.error("Tavily search error:", err.message);
-    // Continue without web results — LLM will generate from JD only
+  for (const c of companiesInput) {
+    if (!c.jd || c.jd.trim().length < 50) {
+      return NextResponse.json(
+        { error: `Job description for ${c.company || "a company"} is too short.` },
+        { status: 400 }
+      );
+    }
   }
 
-  // Step 3: Synthesize
+  // Step 1: Extract meta for all JDs in parallel
+  const metas = await Promise.all(
+    companiesInput.map((c) =>
+      extractJDMeta(c.jd, c.company?.trim() || undefined).catch(() => ({
+        company: c.company || null,
+        role: "Software Engineer",
+        seniority: "Mid",
+        techStack: [],
+        keyTopics: [],
+      }))
+    )
+  );
+
+  // Step 2: Search web for all companies in parallel
+  const allSnippets = await Promise.all(
+    metas.map((meta) =>
+      searchInterviewQuestions(meta.company, meta.role, meta.techStack).catch(() => [])
+    )
+  );
+
+  // Step 3: Synthesize unified question bank
+  const entries = metas.map((meta, i) => ({
+    meta,
+    snippets: allSnippets[i],
+    jd: companiesInput[i].jd,
+  }));
+
   let questions;
   try {
-    questions = await synthesizeQuestions(meta, snippets, jd);
+    questions = await synthesizeQuestions(entries);
   } catch (err) {
-    return NextResponse.json({ error: "Failed to generate questions. Please try again." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to generate questions. Please try again." },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({
-    company: meta.company,
-    role: meta.role,
-    seniority: meta.seniority,
-    techStack: meta.techStack,
-    sourcedCount: snippets.length,
+    companies: metas,
     questions,
+    sourcedCount: allSnippets.flat().length,
   });
 }
