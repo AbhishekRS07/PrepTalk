@@ -9,7 +9,7 @@ import { useSessionState } from "@/lib/useSessionState";
 import {
   Sparkles, Loader2, Play, CheckCircle2, XCircle, Bookmark,
   BookmarkCheck, RefreshCw, ChevronDown, ChevronUp, Lightbulb,
-  AlertCircle, Trophy, Info,
+  AlertCircle, Trophy, Info, ArrowLeft,
 } from "lucide-react";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
@@ -463,6 +463,14 @@ export default function ChallengesTab({ initialCategory = null, initialLevel = n
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+      {/* Back button */}
+      <button
+        onClick={() => { setChallenge(null); setTestResults(null); setCompileError(""); setShowSetup(false); }}
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" /> Back to Challenges
+      </button>
+
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">

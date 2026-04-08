@@ -23,7 +23,9 @@ import {
   User,
   Bookmark,
   BookmarkCheck,
+  ArrowLeft,
 } from "lucide-react";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useSearchParams } from "next/navigation";
 import { Button } from "../../../components/ui/button";
@@ -1247,6 +1249,12 @@ function QuestionsContent() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16">
+      {/* Back */}
+      <Link href="/dashboard"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+      </Link>
+
       {/* Header */}
       <motion.div initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.1 } } }}>
         <motion.h1 variants={fadeUp}
