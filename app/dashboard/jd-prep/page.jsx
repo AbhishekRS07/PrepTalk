@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useId } from "react";
+import { useState, useRef, useCallback, useId, useEffect } from "react";
 import { useSessionState, useSessionSet } from "@/lib/useSessionState";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
@@ -38,6 +38,10 @@ const getTopicColor = (topic) => {
     topicColorIdx++;
   }
   return topicColorMap[topic];
+};
+const resetTopicColors = () => {
+  Object.keys(topicColorMap).forEach((k) => delete topicColorMap[k]);
+  topicColorIdx = 0;
 };
 
 // One color per company slot
@@ -101,6 +105,10 @@ function CompanySlot({ entry, index, total, onChange, onRemove }) {
   const [fileError, setFileError] = useState("");
   const col = companyColor(index);
 
+  // Keep a ref to the latest entry so async PDF extraction never uses a stale closure
+  const entryRef = useRef(entry);
+  useEffect(() => { entryRef.current = entry; }, [entry]);
+
   const handleFile = useCallback(async (f) => {
     if (!f) return;
     if (f.type !== "application/pdf") { setFileError("Only PDF files are supported."); return; }
@@ -110,11 +118,11 @@ function CompanySlot({ entry, index, total, onChange, onRemove }) {
     try {
       const ab = await f.arrayBuffer();
       const { text } = await extractText(new Uint8Array(ab), { mergePages: true });
-      onChange({ ...entry, jd: text?.trim() || "" });
+      onChange({ ...entryRef.current, jd: text?.trim() || "" });
     } catch {
       setFileError("Could not read PDF — try pasting the JD as text.");
     }
-  }, [entry, onChange]);
+  }, [onChange]);
 
   const onDrop = useCallback((e) => {
     e.preventDefault(); setDragging(false);
@@ -188,6 +196,9 @@ function CompanySlot({ entry, index, total, onChange, onRemove }) {
           <textarea
             value={entry.jd}
             onChange={(e) => onChange({ ...entry, jd: e.target.value })}
+            onDrop={(e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); setDragging(false); }}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
             placeholder="Paste the job description here… or drag & drop a PDF"
             rows={7}
             className="w-full bg-transparent px-4 py-3 text-sm resize-none focus:outline-none leading-relaxed placeholder:text-muted-foreground/50 rounded-xl"
@@ -331,6 +342,9 @@ export default function JDPrepPage() {
   const [savingAll, setSavingAll] = useState(false);
   const [filter, setFilter] = useState("all"); // "all" | "common" | companyName
 
+  const abortRef = useRef(null);
+  useEffect(() => () => abortRef.current?.abort(), []);
+
   const isLoading = loadingStep !== null;
 
   // ── Entry management ───────────────────────────────────────────
@@ -346,9 +360,18 @@ export default function JDPrepPage() {
 
   // ── Research ───────────────────────────────────────────────────
   const handleResearch = async () => {
+    if (!user) {
+      setError("Please sign in to generate questions.");
+      return;
+    }
     for (const e of entries) {
-      if (!e.jd.trim() || e.jd.trim().length < 50) {
+      const jd = e.jd.trim();
+      if (!jd || jd.length < 50) {
         setError(`Job description for ${e.company || `Company ${entries.indexOf(e) + 1}`} is too short (min 50 chars).`);
+        return;
+      }
+      if (jd.length > 20000) {
+        setError(`Job description for ${e.company || `Company ${entries.indexOf(e) + 1}`} is too long (max 20,000 chars).`);
         return;
       }
     }
@@ -356,6 +379,12 @@ export default function JDPrepPage() {
     setResult(null);
     setBookmarked(new Set());
     setFilter("all");
+    resetTopicColors();
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     setLoadingStep("parse");
     await new Promise((r) => setTimeout(r, 800));
@@ -368,6 +397,7 @@ export default function JDPrepPage() {
         body: JSON.stringify({
           companies: entries.map((e) => ({ jd: e.jd, company: e.company.trim() || undefined })),
         }),
+        signal: controller.signal,
       });
 
       await new Promise((r) => setTimeout(r, 5000));
@@ -378,8 +408,10 @@ export default function JDPrepPage() {
       if (!res.ok) throw new Error(data.error || "Research failed");
       setResult(data);
     } catch (err) {
+      if (err.name === "AbortError") return;
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
+      clearTimeout(timeoutId);
       setLoadingStep(null);
     }
   };
@@ -389,26 +421,34 @@ export default function JDPrepPage() {
     const profile = result?.companies?.length
       ? result.companies.map((m) => m.company || "Company").join(" / ")
       : "JD Research";
-    const res = await fetch("/api/bookmarks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: item.question, answer: item.answer, profile }),
-    });
-    const data = await res.json();
-    setBookmarked((prev) => {
-      const next = new Set(prev);
-      data.bookmarked ? next.add(item.question) : next.delete(item.question);
-      return next;
-    });
+    try {
+      const res = await fetch("/api/bookmarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: item.question, answer: item.answer, profile }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Bookmark failed");
+      setBookmarked((prev) => {
+        const next = new Set(prev);
+        data.bookmarked ? next.add(item.question) : next.delete(item.question);
+        return next;
+      });
+    } catch {
+      setError("Failed to save bookmark — please try again.");
+    }
   };
 
   const handleSaveAll = async () => {
     if (!result?.questions) return;
     setSavingAll(true);
-    for (const q of result.questions.filter((q) => !bookmarked.has(q.question))) {
-      await handleToggleBookmark(q);
+    try {
+      for (const q of result.questions.filter((q) => !bookmarked.has(q.question))) {
+        await handleToggleBookmark(q);
+      }
+    } finally {
+      setSavingAll(false);
     }
-    setSavingAll(false);
   };
 
   const handleReset = () => {
@@ -417,6 +457,7 @@ export default function JDPrepPage() {
     setEntries([newEntry()]);
     setError("");
     setFilter("all");
+    resetTopicColors();
   };
 
   // ── Filtered questions ─────────────────────────────────────────
@@ -502,7 +543,7 @@ export default function JDPrepPage() {
           </AnimatePresence>
 
           <Button onClick={handleResearch}
-            disabled={entries.some((e) => e.jd.trim().length < 50)}
+            disabled={entries.some((e) => e.jd.trim().length < 50 || e.jd.trim().length > 20000)}
             className="w-full gap-2 h-11">
             <Globe className="h-4 w-4" />
             {isMulti ? `Search & Build Unified Question Bank (${entries.length} companies)` : "Search & Generate Question Bank"}
@@ -584,16 +625,17 @@ export default function JDPrepPage() {
               {[
                 { id: "all", label: `All (${questions.length})` },
                 { id: "common", label: `Common (${commonCount})`, icon: Layers },
-                ...resultMetas.map((m) => ({
-                  id: m.company || `Company`,
-                  label: m.company || "Company",
-                  metaIdx: resultMetas.indexOf(m),
+                ...resultMetas.map((m, i) => ({
+                  id: m.company || `Company ${i + 1}`,
+                  label: m.company || `Company ${i + 1}`,
+                  metaIdx: i,
+                  _key: `company-filter-${i}`,
                 })),
               ].map((f) => {
                 const isActive = filter === f.id;
                 const col = f.metaIdx !== undefined ? companyColor(f.metaIdx) : null;
                 return (
-                  <button key={f.id} onClick={() => setFilter(f.id)}
+                  <button key={f._key ?? f.id} onClick={() => setFilter(f.id)}
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all",
                       isActive
@@ -620,7 +662,7 @@ export default function JDPrepPage() {
               ) : (
                 filteredQuestions.map((q, i) => (
                   <QuestionCard
-                    key={q.question}
+                    key={`${q.question}-${i}`}
                     item={q}
                     index={i}
                     resultMetas={resultMetas}
