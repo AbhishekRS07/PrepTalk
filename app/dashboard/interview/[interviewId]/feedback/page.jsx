@@ -16,6 +16,7 @@ import {
   Share2,
   Copy,
   Check,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -184,6 +185,64 @@ function FeedbackItem({ item, index }) {
   );
 }
 
+// ── Attention helpers ──────────────────────────────────────────
+const getAttentionLabel = (score) => {
+  if (score >= 90) return { label: "Excellent Focus",  color: "text-emerald-600 dark:text-emerald-400", bar: "bg-emerald-500" };
+  if (score >= 70) return { label: "Good Focus",        color: "text-amber-600 dark:text-amber-400",   bar: "bg-amber-500" };
+  if (score >= 50) return { label: "Moderate Distractions", color: "text-orange-500 dark:text-orange-400", bar: "bg-orange-500" };
+  return             { label: "Frequent Distractions", color: "text-red-500 dark:text-red-400",       bar: "bg-red-500" };
+};
+
+// ── Attention Score card ────────────────────────────────────────
+function AttentionCard({ score, violations }) {
+  const { label, color, bar } = getAttentionLabel(score);
+  const violationCount = violations?.length ?? 0;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.15 }}
+      className="bg-card border border-border rounded-3xl p-6"
+    >
+      <div className="flex items-center gap-2 mb-5">
+        <Eye className="h-4 w-4 text-primary" />
+        <span className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
+          Attention Score
+        </span>
+      </div>
+
+      <div className="flex items-end gap-4 mb-4">
+        <motion.span
+          initial={{ opacity: 0, scale: 0.6 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="text-4xl font-black leading-none"
+        >
+          {score}%
+        </motion.span>
+        <span className={cn("text-sm font-bold mb-0.5", color)}>{label}</span>
+      </div>
+
+      {/* Bar */}
+      <div className="h-2.5 bg-secondary rounded-full overflow-hidden mb-3">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${score}%` }}
+          transition={{ duration: 1.2, ease: "easeOut", delay: 0.5 }}
+          className={cn("h-full rounded-full", bar)}
+        />
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        {violationCount === 0
+          ? "No distractions detected — great focus throughout!"
+          : `${violationCount} distraction${violationCount !== 1 ? "s" : ""} detected during the session.`}
+      </p>
+    </motion.div>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────
 const Feedback = () => {
   const params = useParams();
@@ -192,6 +251,7 @@ const Feedback = () => {
   const [loading, setLoading] = useState(true);
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [attentionData, setAttentionData] = useState(null);
   const router = useRouter();
 
   const handleShare = async () => {
@@ -216,6 +276,11 @@ const Feedback = () => {
 
   useEffect(() => {
     GetFeedback();
+    // Read attention data saved during the session
+    try {
+      const raw = sessionStorage.getItem(`attention_${params.interviewId}`);
+      if (raw) setAttentionData(JSON.parse(raw));
+    } catch (_) {}
   }, []);
 
   const GetFeedback = async () => {
@@ -334,6 +399,14 @@ const Feedback = () => {
           </p>
         </div>
       </motion.div>
+
+      {/* Attention score — only shown when webcam was active during the session */}
+      {attentionData && (
+        <AttentionCard
+          score={attentionData.score}
+          violations={attentionData.violations}
+        />
+      )}
 
       {/* Per-question breakdown */}
       <div>

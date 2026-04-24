@@ -1,13 +1,14 @@
 "use client";
-import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
+import { useEffect, useImperativeHandle, useRef, useState, forwardRef, useCallback } from "react";
 import WebcamComponent from "react-webcam";
 import useSpeechToText from "react-hook-speech-to-text";
-import { Mic, MicOff, Loader2, VideoOff } from "lucide-react";
+import { Mic, MicOff, Loader2, VideoOff, Eye, EyeOff } from "lucide-react";
 import { Button } from "../../../../../../components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useEyeTracking } from "@/lib/useEyeTracking";
 
 const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref) => {
   const [userAnswer, setUserAnswer] = useState("");
@@ -17,8 +18,26 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
   const [loading, setLoading] = useState(false);
   const [webcamEnabled, setWebcamEnabled] = useState(false);
 
+  // Webcam + video refs for eye tracking
+  const webcamRef = useRef(null);
+  const videoRef = useRef(null);
+
   const { isRecording, results, setResults, startSpeechToText, stopSpeechToText } =
     useSpeechToText({ continuous: true, useLegacyResults: false });
+
+  // ── Eye tracking ────────────────────────────────────────────────
+  const { isTracking, faceDetected, warningActive } = useEyeTracking({
+    videoRef,
+    enabled: webcamEnabled && !!interviewData?.mockId,
+    mockId: interviewData?.mockId,
+  });
+
+  // Wire up videoRef when webcam stream starts
+  const handleUserMedia = useCallback(() => {
+    if (webcamRef.current?.video) {
+      videoRef.current = webcamRef.current.video;
+    }
+  }, []);
 
   // Keep activeRef in sync so saveCurrentAnswer always uses the right index
   useEffect(() => {
@@ -88,12 +107,32 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
     }
   };
 
+  // ── Tracking status dot ─────────────────────────────────────────
+  // green = tracking + face ok, yellow = tracking but face lost, grey = not tracking
+  const dotColor = !webcamEnabled || !isTracking
+    ? "bg-zinc-500"
+    : warningActive || !faceDetected
+    ? "bg-amber-400"
+    : "bg-emerald-400";
+
+  const dotTitle = !webcamEnabled
+    ? "Camera off"
+    : !isTracking
+    ? "Eye tracking loading…"
+    : !faceDetected
+    ? "Face not detected"
+    : warningActive
+    ? "Distraction detected"
+    : "Eye tracking active";
+
   return (
     <div className="flex flex-col gap-4 h-full">
       {/* Webcam */}
       <div className="bg-muted rounded-2xl overflow-hidden aspect-video flex items-center justify-center relative">
         {webcamEnabled ? (
           <WebcamComponent
+            ref={webcamRef}
+            onUserMedia={handleUserMedia}
             mirrored
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
@@ -103,6 +142,8 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
             <p className="text-xs">Camera off</p>
           </div>
         )}
+
+        {/* Recording badge */}
         <AnimatePresence>
           {isRecording && (
             <motion.div
@@ -114,6 +155,38 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
               <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
               Recording
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Eye tracking status indicator */}
+        {webcamEnabled && (
+          <div
+            className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/50 text-white text-xs px-2 py-1 rounded-full"
+            title={dotTitle}
+          >
+            <span className={cn("h-2 w-2 rounded-full shrink-0", dotColor, !isTracking && "animate-pulse")} />
+            {isTracking ? (
+              faceDetected ? (
+                <Eye className="h-3 w-3" />
+              ) : (
+                <EyeOff className="h-3 w-3 text-amber-300" />
+              )
+            ) : (
+              <Eye className="h-3 w-3 opacity-40" />
+            )}
+          </div>
+        )}
+
+        {/* Warning flash overlay */}
+        <AnimatePresence>
+          {warningActive && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 border-2 border-amber-400 rounded-2xl pointer-events-none"
+            />
           )}
         </AnimatePresence>
       </div>
