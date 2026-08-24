@@ -4,7 +4,13 @@ import { runPrompt } from "@/lib/langchain";
 import { cleanJson } from "@/lib/utils";
 import { tavily } from "@tavily/core";
 
-const tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY });
+let _tavilyClient;
+const getTavilyClient = () => {
+  if (!_tavilyClient) {
+    _tavilyClient = tavily({ apiKey: process.env.TAVILY_API_KEY });
+  }
+  return _tavilyClient;
+};
 
 // ── Step 1: Extract company / role / stack from JD ────────────────
 async function extractJDMeta(jdText, manualCompany) {
@@ -42,7 +48,7 @@ async function searchInterviewQuestions(company, role, techStack) {
 
   const results = await Promise.allSettled(
     queries.map((q) =>
-      tavilyClient.search(q, {
+      getTavilyClient().search(q, {
         searchDepth: "basic",
         maxResults: 4,
         includeAnswer: false,
