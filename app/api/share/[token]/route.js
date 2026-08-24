@@ -2,12 +2,19 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 // Public client — no auth required, only reads shared data
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+let _supabase;
+const getSupabase = () => {
+  if (!_supabase) {
+    _supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+  }
+  return _supabase;
+};
 
 export async function GET(req, { params }) {
+  const supabase = getSupabase();
   const { token } = params;
   if (!token) return NextResponse.json({ error: "Missing token" }, { status: 400 });
 

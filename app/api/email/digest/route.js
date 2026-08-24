@@ -4,10 +4,16 @@ import { NextResponse } from "next/server";
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+let _supabaseAdmin;
+const getSupabaseAdmin = () => {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  }
+  return _supabaseAdmin;
+};
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -193,9 +199,9 @@ export async function GET(req) {
 
   // Fetch all users + profiles (includes email_digest preference)
   const [{ data: mockUsers }, { data: liveUsers }, { data: profiles }] = await Promise.all([
-    supabaseAdmin.from("preptalk").select("createdBy").not("createdBy", "is", null),
-    supabaseAdmin.from("liveInterview").select("createdBy").not("createdBy", "is", null),
-    supabaseAdmin.from("profiles").select("email, username, email_digest"),
+    getSupabaseAdmin().from("preptalk").select("createdBy").not("createdBy", "is", null),
+    getSupabaseAdmin().from("liveInterview").select("createdBy").not("createdBy", "is", null),
+    getSupabaseAdmin().from("profiles").select("email, username, email_digest"),
   ]);
 
   const allEmails = new Set([
@@ -227,12 +233,12 @@ export async function GET(req) {
         { data: roadmapData },
         { data: upcomingInterviews },
       ] = await Promise.all([
-        supabaseAdmin.from("userAnswer").select("mockId, rating, createdAt").eq("userEmail", email),
-        supabaseAdmin.from("liveInterview").select("score, role, createdAt").eq("createdBy", email).gt("score", 0),
-        supabaseAdmin.from("preptalk").select("mockId, jobPosition, createdAt").eq("createdBy", email),
-        supabaseAdmin.from("streak").select("current_streak").eq("email", email).single().catch(() => ({ data: null })),
-        supabaseAdmin.from("roadmap").select("phases, completed_ids").eq("email", email).single().catch(() => ({ data: null })),
-        supabaseAdmin.from("upcoming_interviews").select("company, role, interview_date")
+        getSupabaseAdmin().from("userAnswer").select("mockId, rating, createdAt").eq("userEmail", email),
+        getSupabaseAdmin().from("liveInterview").select("score, role, createdAt").eq("createdBy", email).gt("score", 0),
+        getSupabaseAdmin().from("preptalk").select("mockId, jobPosition, createdAt").eq("createdBy", email),
+        getSupabaseAdmin().from("streak").select("current_streak").eq("email", email).single().catch(() => ({ data: null })),
+        getSupabaseAdmin().from("roadmap").select("phases, completed_ids").eq("email", email).single().catch(() => ({ data: null })),
+        getSupabaseAdmin().from("upcoming_interviews").select("company, role, interview_date")
           .eq("email", email).eq("status", "upcoming").gte("interview_date", new Date().toISOString().split("T")[0])
           .order("interview_date", { ascending: true }).limit(1),
       ]);

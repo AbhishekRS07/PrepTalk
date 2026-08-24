@@ -2,10 +2,16 @@ import { requireUser } from "@/lib/auth";
 import { createClient as createAdmin } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-const supabaseAdmin = createAdmin(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+let _supabaseAdmin;
+const getSupabaseAdmin = () => {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  }
+  return _supabaseAdmin;
+};
 
 // GET /api/email/unsubscribe?email=x&token=y  — one-click unsubscribe from email links
 export async function GET(req) {
@@ -23,7 +29,7 @@ export async function GET(req) {
     return new Response("<p>Invalid or expired unsubscribe link.</p>", { status: 403, headers: { "Content-Type": "text/html" } });
   }
 
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from("profiles")
     .upsert({ email, email_digest: false }, { onConflict: "email" });
 
