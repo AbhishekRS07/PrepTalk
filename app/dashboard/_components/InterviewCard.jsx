@@ -70,7 +70,7 @@ const InterviewCard = ({ interview, onDelete }) => {
       onMouseLeave={handleMouseLeave}
     >
       {/* Hover glow halo */}
-      <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/20 via-violet-500/10 to-transparent blur-sm -z-10 pointer-events-none" />
+      <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/20 via-emerald-500/10 to-transparent blur-sm -z-10 pointer-events-none" />
 
       {/* Card */}
       <div className="relative bg-card border border-border rounded-2xl p-5 flex flex-col gap-4 group-hover:border-primary/30 transition-colors duration-300 overflow-hidden">

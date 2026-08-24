@@ -150,7 +150,7 @@ export async function GET(request) {
     typeStats[s.type].total += s.avg;
   }
   const byType = [
-    { type: "Mock", label: "Mock Interviews", count: typeStats.mock.count, avg: typeStats.mock.count ? parseFloat((typeStats.mock.total / typeStats.mock.count).toFixed(1)) : 0, color: "#8b5cf6" },
+    { type: "Mock", label: "Mock Interviews", count: typeStats.mock.count, avg: typeStats.mock.count ? parseFloat((typeStats.mock.total / typeStats.mock.count).toFixed(1)) : 0, color: "#3b82f6" },
     { type: "Live", label: "Live Interviews", count: typeStats.live.count, avg: typeStats.live.count ? parseFloat((typeStats.live.total / typeStats.live.count).toFixed(1)) : 0, color: "#10b981" },
     { type: "Resume", label: "Resume-based", count: typeStats.resume.count, avg: typeStats.resume.count ? parseFloat((typeStats.resume.total / typeStats.resume.count).toFixed(1)) : 0, color: "#f59e0b" },
   ].filter((t) => t.count > 0);

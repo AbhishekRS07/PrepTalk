@@ -19,6 +19,15 @@ const tabs = [
   { id: "resume", label: "Resume Interviews", icon: FileText },
 ];
 
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 5) return "Still up";
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  if (h < 21) return "Good evening";
+  return "Good evening";
+}
+
 const Dashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("mock");
@@ -29,18 +38,15 @@ const Dashboard = () => {
     "there";
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
       {/* Header */}
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="relative">
-        <div className="absolute -top-8 -left-8 w-64 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-        <motion.p variants={lineVariants} className="text-sm text-muted-foreground mb-1">
-          Welcome back, {firstName} 👋
-        </motion.p>
-        <motion.h1 variants={lineVariants} className="text-3xl font-bold tracking-tight">
-          Dashboard
+        <div className="absolute -top-10 -left-10 w-72 h-40 bg-primary/6 rounded-full blur-3xl pointer-events-none" />
+        <motion.h1 variants={lineVariants} className="text-3xl md:text-4xl font-black tracking-tight leading-tight">
+          {getGreeting()}, {firstName}.
         </motion.h1>
-        <motion.p variants={lineVariants} className="text-muted-foreground mt-1">
-          Create a new mock interview or start a live conversational session.
+        <motion.p variants={lineVariants} className="text-muted-foreground mt-2 max-w-lg leading-relaxed">
+          Start a mock interview, go live with the AI, or practice from your resume or a job description.
         </motion.p>
       </motion.div>
 
@@ -51,9 +57,12 @@ const Dashboard = () => {
 
       {/* New Interview cards */}
       <motion.div variants={sectionVariants} initial="hidden" animate="visible" custom={2}>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-4">
-          Start Interview
-        </h2>
+        <div className="flex items-center gap-3 mb-5">
+          <h2 className="text-sm font-semibold text-primary shrink-0">
+            {"// start interview"}
+          </h2>
+          <div className="h-px flex-1 bg-border/60" />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <AddNewInterview />
           <LiveInterviewCard />
@@ -71,7 +80,7 @@ const Dashboard = () => {
               key={id}
               onClick={() => setActiveTab(id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium font-mono lowercase transition-all duration-200",
                 activeTab === id
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"

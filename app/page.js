@@ -1,10 +1,17 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
-import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useMotionValue,
+  useSpring,
+  AnimatePresence,
+  useReducedMotion,
+} from "framer-motion";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import {
@@ -12,8 +19,6 @@ import {
   Mic,
   Code2,
   ArrowRight,
-  CheckCircle2,
-  Sparkles,
   ChevronRight,
   ChevronDown,
   FileText,
@@ -22,11 +27,54 @@ import {
   ScanText,
 } from "lucide-react";
 
-// Load 3D canvas only on client — no SSR
-const HeroCanvas = dynamic(() => import("@/components/HeroCanvas"), {
+// 3D ambient particle network behind the hero — client-only, no SSR
+const TerminalParticleField = dynamic(() => import("@/components/TerminalParticleField"), {
   ssr: false,
   loading: () => null,
 });
+
+// ── Tilt wrapper — gives the hero panel real depth on mouse move ──
+function TiltPanel({ children }) {
+  const ref = useRef(null);
+  const shouldReduceMotion = useReducedMotion();
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [7, -7]), { stiffness: 200, damping: 22 });
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-7, 7]), { stiffness: 200, damping: 22 });
+  const shadowX = useSpring(useTransform(mouseX, [-0.5, 0.5], [20, -20]), { stiffness: 200, damping: 22 });
+  const shadowY = useSpring(useTransform(mouseY, [-0.5, 0.5], [16, -16]), { stiffness: 200, damping: 22 });
+
+  const handleMove = (e) => {
+    if (shouldReduceMotion || !ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
+    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
+  };
+  const handleLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  return (
+    <div
+      ref={ref}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      style={{ perspective: 1400 }}
+      className="relative"
+    >
+      <motion.div
+        aria-hidden
+        className="absolute inset-3 rounded-2xl bg-black/50 blur-xl -z-10"
+        style={shouldReduceMotion ? undefined : { x: shadowX, y: shadowY }}
+      />
+      <motion.div style={shouldReduceMotion ? undefined : { rotateX, rotateY }}>
+        {children}
+      </motion.div>
+    </div>
+  );
+}
 
 // ── Animation Variants ─────────────────────────────────────────
 const fadeUp = {
@@ -43,35 +91,51 @@ const fadeIn = {
   visible: { opacity: 1, transition: { duration: 0.7 } },
 };
 
+const cardEntrance = {
+  hidden: { opacity: 0, y: 48, scale: 0.94 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.55, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] },
+  }),
+};
+
 // ── Data ───────────────────────────────────────────────────────
 const features = [
   {
     icon: Brain,
+    file: "mock-interview.ts",
     title: "AI Mock Interviews",
     desc: "Questions tailored to your role, tech stack, and experience level — answered by voice or text with instant AI feedback.",
   },
   {
     icon: Mic,
+    file: "live-interviewer.ts",
     title: "Live AI Interviewer",
     desc: "Have a real back-and-forth conversation with an AI that probes weak answers, asks follow-ups, and adapts in real time.",
   },
   {
     icon: FileText,
+    file: "resume-questions.ts",
     title: "Resume-based Questions",
     desc: "Upload your resume and get questions grounded in your actual projects, companies, and skills — not generic prompts.",
   },
   {
     icon: Code2,
+    file: "dsa-practice.ts",
     title: "DSA Practice + IDE",
     desc: "Solve AI-generated DSA problems by topic and experience — with a built-in VS Code-style editor and live code execution.",
   },
   {
     icon: MapPin,
+    file: "roadmap.ts",
     title: "AI Learning Roadmap",
     desc: "Get a personalized step-by-step preparation plan based on your current role and target job — with milestone tracking and PrepTalk feature links at every step.",
   },
   {
     icon: ScanText,
+    file: "ats-analyzer.ts",
     title: "Resume ATS Analyzer",
     desc: "Upload your resume and get an ATS score, keyword gap analysis, section-by-section feedback, and a priority-sorted action plan — with an optional JD match mode.",
   },
@@ -108,14 +172,15 @@ const headlineWords = [
   "system design",
   "tech screen",
   "behavioral round",
+  "HR round",
 ];
 
 // Marquee keywords
 const marqueeItems = [
-  "React", "Node.js", "System Design", "TypeScript", "AWS",
-  "Python", "DSA", "Behavioral", "Frontend", "Backend",
-  "Full Stack", "DevOps", "SQL", "Go", "Kubernetes",
-  "LeetCode", "Spring Boot", "GraphQL", "Docker", "Redis",
+  "React", "System Design", "TypeScript", "AWS", "Python",
+  "DSA", "Behavioral", "Talent Acquisition", "Frontend", "Backend",
+  "Full Stack", "DevOps", "HRIS", "Kubernetes", "LeetCode",
+  "Employee Relations", "GraphQL", "Docker", "Recruiting", "Product",
 ];
 
 // ── Navbar ─────────────────────────────────────────────────────
@@ -125,30 +190,40 @@ function Navbar({ onGetStarted }) {
       initial={{ opacity: 0, y: -16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="fixed top-0 inset-x-0 z-50 glass border-b border-border/50"
+      className="fixed top-0 inset-x-0 z-50 bg-[var(--pt-ink)]/90 backdrop-blur-md border-b border-[var(--pt-line)]"
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Image src="/logo.svg" width={32} height={32} alt="PrepTalk" priority />
-          <span className="font-bold text-lg tracking-tight">PrepTalk</span>
+          <Image src="/logo.svg" width={28} height={28} alt="PrepTalk" priority />
+          <span className="pt-mono font-semibold text-lg tracking-tight text-[var(--pt-chalk)]">
+            PrepTalk<span className="pt-cursor-blink text-[var(--pt-signal)]">_</span>
+          </span>
         </div>
 
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-          <a href="#features" className="hover:text-foreground transition-colors">
-            Features
+        <div className="hidden md:flex items-center gap-8 pt-mono text-sm text-[var(--pt-mist)]">
+          <a href="#features" className="hover:text-[var(--pt-chalk)] transition-colors">
+            features
           </a>
-          <a href="#how-it-works" className="hover:text-foreground transition-colors">
-            How it works
+          <a href="#how-it-works" className="hover:text-[var(--pt-chalk)] transition-colors">
+            how-it-works
           </a>
         </div>
 
         <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <Button variant="ghost" size="sm" onClick={onGetStarted}>
-            Sign in
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onGetStarted}
+            className="pt-mono text-[var(--pt-mist)] hover:text-[var(--pt-chalk)] hover:bg-[var(--pt-panel)]"
+          >
+            sign in
           </Button>
-          <Button size="sm" onClick={onGetStarted} className="gap-1">
-            Get started <ChevronRight className="h-3.5 w-3.5" />
+          <Button
+            size="sm"
+            onClick={onGetStarted}
+            className="pt-mono gap-1 bg-[var(--pt-signal)] text-[var(--pt-ink)] hover:bg-[var(--pt-signal)]/90 focus-visible:ring-[var(--pt-signal)]"
+          >
+            get started <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
@@ -158,25 +233,24 @@ function Navbar({ onGetStarted }) {
 
 // ── Marquee Band ───────────────────────────────────────────────
 function MarqueeBand() {
+  const shouldReduceMotion = useReducedMotion();
   const doubled = [...marqueeItems, ...marqueeItems];
   return (
-    <div className="relative overflow-hidden py-4 border-y border-border/40 bg-secondary/20 backdrop-blur-sm">
-      {/* Left fade */}
-      <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-      {/* Right fade */}
-      <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+    <div className="relative overflow-hidden py-4 border-y border-[var(--pt-line)] bg-[var(--pt-panel)]/50">
+      <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-[var(--pt-ink)] to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[var(--pt-ink)] to-transparent z-10 pointer-events-none" />
 
       <motion.div
-        animate={{ x: ["0%", "-50%"] }}
-        transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
-        className="flex gap-10 w-max"
+        animate={shouldReduceMotion ? {} : { x: ["0%", "-50%"] }}
+        transition={{ duration: 26, repeat: Infinity, ease: "linear" }}
+        className="flex gap-10 w-max pt-mono"
       >
         {doubled.map((item, i) => (
           <span
             key={i}
-            className="text-sm font-medium text-muted-foreground whitespace-nowrap flex items-center gap-2.5"
+            className="text-sm text-[var(--pt-mist)] whitespace-nowrap flex items-center gap-2.5"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-primary/50 flex-shrink-0" />
+            <span className="w-1 h-1 rounded-full bg-[var(--pt-signal)] flex-shrink-0" />
             {item}
           </span>
         ))}
@@ -188,27 +262,9 @@ function MarqueeBand() {
 // ── Hero ───────────────────────────────────────────────────────
 function Hero({ onGetStarted }) {
   const { scrollY } = useScroll();
-
-  // 3D canvas drifts down slower than scroll — creates parallax depth
-  const canvasY = useTransform(scrollY, [0, 900], [0, 260]);
-  // Content floats upward on scroll
-  const contentY = useTransform(scrollY, [0, 900], [0, -90]);
-  // Entire hero fades as user scrolls away
+  const contentY = useTransform(scrollY, [0, 900], [0, -60]);
   const heroOpacity = useTransform(scrollY, [0, 500], [1, 0]);
 
-  // Mouse spotlight
-  const [spot, setSpot] = useState({ x: 50, y: 50, visible: false });
-  const handleMouseMove = useCallback((e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setSpot({
-      x: ((e.clientX - rect.left) / rect.width) * 100,
-      y: ((e.clientY - rect.top) / rect.height) * 100,
-      visible: true,
-    });
-  }, []);
-  const handleMouseLeave = useCallback(() => setSpot((s) => ({ ...s, visible: false })), []);
-
-  // Animated headline word
   const [wordIdx, setWordIdx] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setWordIdx((i) => (i + 1) % headlineWords.length), 2800);
@@ -216,145 +272,214 @@ function Hero({ onGetStarted }) {
   }, []);
 
   return (
-    <section
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* ── 3D Canvas (parallax layer) ── */}
-      <motion.div style={{ y: canvasY }} className="absolute inset-0">
-        <HeroCanvas />
+    <section className="relative min-h-screen flex items-center overflow-hidden pt-24 pb-16 px-6">
+      {/* 3D particle network — ambient depth, drifting data points */}
+      <div className="absolute inset-0 pointer-events-none">
+        <TerminalParticleField />
+        <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-[var(--pt-ink)] to-transparent" />
+      </div>
 
-        {/* Bottom fade — seamless transition to next section */}
-        <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+      {/* Ambient glow — quiet, single source */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[900px] h-[900px] bg-[var(--pt-signal)]/[0.04] rounded-full blur-[160px] pointer-events-none" />
 
-        {/* Top-left glow blob */}
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-primary/8 rounded-full blur-3xl pointer-events-none" />
-
-        {/* Top-right glow blob */}
-        <div className="absolute top-1/3 -right-20 w-80 h-80 bg-indigo-600/8 rounded-full blur-3xl pointer-events-none" />
-      </motion.div>
-
-      {/* ── Mouse spotlight ── */}
-      <div
-        className="absolute inset-0 pointer-events-none z-[1] transition-opacity duration-500"
-        style={{
-          opacity: spot.visible ? 1 : 0,
-          background: `radial-gradient(700px circle at ${spot.x}% ${spot.y}%, rgba(139,92,246,0.10), transparent 55%)`,
-        }}
-      />
-
-      {/* ── Hero Content (parallax layer 2) ── */}
       <motion.div
         style={{ y: contentY, opacity: heroOpacity }}
-        className="relative z-10 max-w-5xl mx-auto text-center px-6 pt-28 pb-20"
+        className="relative z-10 max-w-6xl mx-auto grid lg:grid-cols-[1.1fr,0.9fr] gap-16 items-center w-full"
       >
-        {/* Badge */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={0}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/8 text-sm font-medium mb-8 backdrop-blur-sm"
-        >
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
-          AI-powered mock interviews
-        </motion.div>
-
-        {/* Headline with animated word — rendered immediately for LCP */}
-        <h1 className="text-5xl md:text-8xl font-black tracking-tight leading-[1.05] mb-6 animate-fade-up">
-          Ace your next{" "}
-          <span className="inline-block relative">
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={headlineWords[wordIdx]}
-                initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, y: -20, filter: "blur(6px)" }}
-                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                className="gradient-text inline-block"
-              >
-                {headlineWords[wordIdx]}
-              </motion.span>
-            </AnimatePresence>
-          </span>
-          <br />
-          with AI practice
-        </h1>
-
-        {/* Subheadline */}
-        <motion.p
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={2}
-          className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed"
-        >
-          Mock interviews, live AI conversations, and resume-tailored questions
-          — all with instant feedback so you walk into every interview
-          fully prepared.
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={3}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
-        >
-          <Button
-            size="lg"
-            onClick={onGetStarted}
-            className="gap-2 px-9 h-13 text-base shadow-2xl shadow-primary/30 glow-primary"
+        {/* ── Left: copy ── */}
+        <div>
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={0}
+            className="pt-mono text-xs text-[var(--pt-signal)] mb-6"
           >
-            Start practicing free
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={() =>
-              document
-                .getElementById("how-it-works")
-                ?.scrollIntoView({ behavior: "smooth" })
-            }
-            className="h-13 text-base border-border/60 backdrop-blur-sm"
-          >
-            See how it works
-          </Button>
-        </motion.div>
+            {"// live practice, real signal"}
+          </motion.p>
 
-        {/* Stats row */}
-        <motion.div
-          variants={fadeIn}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-3 gap-4 max-w-xl mx-auto"
-        >
-          {stats.map((s) => (
-            <div
-              key={s.label}
-              className="flex flex-col items-center gap-1.5 py-4 px-3 rounded-2xl bg-background/50 backdrop-blur-sm border border-border/40"
+          <h1 className="pt-mono font-bold tracking-tight leading-[1.1] text-4xl sm:text-5xl md:text-6xl text-[var(--pt-chalk)] mb-6">
+            Rehearse your next{" "}
+            <span className="inline-block relative">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={headlineWords[wordIdx]}
+                  initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, y: -14, filter: "blur(4px)" }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  className="inline-block text-[var(--pt-signal)]"
+                >
+                  {headlineWords[wordIdx]}
+                </motion.span>
+              </AnimatePresence>
+            </span>
+            ,<br />
+            scored like it&apos;s real.
+          </h1>
+
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={1}
+            className="pt-sans text-base md:text-lg text-[var(--pt-mist)] max-w-lg leading-relaxed mb-10"
+          >
+            Mock interviews, live AI conversation, and resume-tailored questions —
+            every answer scored the moment you finish talking.
+          </motion.p>
+
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={2}
+            className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-14"
+          >
+            <Button
+              size="lg"
+              onClick={onGetStarted}
+              className="pt-mono gap-2 px-8 h-12 text-sm bg-[var(--pt-signal)] text-[var(--pt-ink)] hover:bg-[var(--pt-signal)]/90 focus-visible:ring-[var(--pt-signal)]"
             >
-              <span className="text-3xl font-black gradient-text">{s.value}</span>
-              <span className="text-xs text-muted-foreground">{s.label}</span>
+              start practicing free
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() =>
+                document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })
+              }
+              className="pt-mono h-12 text-sm border-[var(--pt-line)] text-[var(--pt-chalk)] bg-transparent hover:bg-[var(--pt-panel)]"
+            >
+              see how it works
+            </Button>
+          </motion.div>
+
+          <motion.div
+            variants={fadeIn}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-3 gap-4 max-w-md"
+          >
+            {stats.map((s) => (
+              <div
+                key={s.label}
+                className="rounded-xl border border-[var(--pt-line)] bg-[var(--pt-panel)]/60 px-3 py-4 text-center"
+              >
+                <div className="pt-mono text-2xl font-bold text-[var(--pt-signal)]">{s.value}</div>
+                <div className="pt-sans text-[11px] text-[var(--pt-mist)] mt-1">{s.label}</div>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+
+        {/* ── Right: live session panel (signature element) ── */}
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3} className="relative">
+          <div className="absolute -inset-8 bg-[var(--pt-signal)]/10 blur-3xl -z-10 pointer-events-none" />
+
+          <TiltPanel>
+          <div className="relative rounded-2xl border border-[var(--pt-line)] bg-[var(--pt-panel)] overflow-hidden shadow-2xl">
+            {/* window chrome */}
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-[var(--pt-line)]">
+              <span className="h-2 w-2 rounded-full bg-[var(--pt-mist)]/30" />
+              <span className="h-2 w-2 rounded-full bg-[var(--pt-mist)]/30" />
+              <span className="h-2 w-2 rounded-full bg-[var(--pt-mist)]/30" />
+              <span className="pt-mono text-xs text-[var(--pt-mist)] ml-2">session.log</span>
+              <span className="ml-auto flex items-center gap-1.5 pt-mono text-[10px] text-[var(--pt-signal)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--pt-signal)] animate-pulse" />
+                live
+              </span>
             </div>
-          ))}
+
+            <div className="p-6 space-y-5 pt-mono text-sm">
+              <motion.div
+                variants={fadeUp}
+                initial="hidden"
+                animate="visible"
+                custom={0}
+                className="space-y-1.5"
+              >
+                <p className="text-[var(--pt-signal)] text-xs">AI —</p>
+                <p className="text-[var(--pt-chalk)] leading-relaxed">
+                  &quot;Tell me about a time you disagreed with a teammate.&quot;
+                </p>
+              </motion.div>
+
+              <motion.div
+                variants={fadeUp}
+                initial="hidden"
+                animate="visible"
+                custom={1}
+                className="flex items-center gap-2"
+              >
+                <div className="flex items-end gap-[3px] h-4">
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <span
+                      key={i}
+                      className="pt-wave-bar w-[3px] h-full rounded-full bg-[var(--pt-signal)]"
+                      style={{ animationDelay: `${i * 0.12}s` }}
+                    />
+                  ))}
+                </div>
+                <span className="text-[var(--pt-mist)] text-xs">listening…</span>
+              </motion.div>
+
+              <motion.div
+                variants={fadeUp}
+                initial="hidden"
+                animate="visible"
+                custom={2}
+                className="space-y-1.5"
+              >
+                <p className="text-[var(--pt-mist)] text-xs">YOU —</p>
+                <p className="text-[var(--pt-chalk)] leading-relaxed">
+                  &quot;In my last project, a teammate wanted to skip code review to hit a deadline. I…&quot;
+                </p>
+              </motion.div>
+
+              <motion.div
+                variants={fadeUp}
+                initial="hidden"
+                animate="visible"
+                custom={3}
+                className="flex items-center gap-3 rounded-lg border border-[var(--pt-line)] bg-[var(--pt-ink)] px-4 py-3"
+              >
+                <span className="text-[var(--pt-signal)] font-bold text-lg">8/10</span>
+                <span className="text-[var(--pt-mist)] text-xs leading-snug">
+                  Strong structure — quantify the impact next time.
+                </span>
+              </motion.div>
+
+              <motion.div
+                variants={fadeUp}
+                initial="hidden"
+                animate="visible"
+                custom={4}
+                className="space-y-1.5"
+              >
+                <p className="text-[var(--pt-ember)] text-xs">AI — follow-up</p>
+                <p className="text-[var(--pt-chalk)]/80 leading-relaxed">
+                  &quot;How would you handle it differently today?&quot;
+                </p>
+              </motion.div>
+            </div>
+          </div>
+          </TiltPanel>
         </motion.div>
       </motion.div>
 
-      {/* ── Scroll Indicator ── */}
+      {/* ── Scroll indicator ── */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 2.2 }}
+        transition={{ delay: 1.8 }}
         style={{ opacity: heroOpacity }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 text-muted-foreground/60"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 pt-mono text-[var(--pt-mist)]"
       >
-        <span className="text-xs tracking-wide">Scroll to explore</span>
+        <span className="text-xs tracking-wide">scroll to explore</span>
         <motion.div
-          animate={{ y: [0, 7, 0] }}
+          animate={{ y: [0, 6, 0] }}
           transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
         >
           <ChevronDown className="h-4 w-4" />
@@ -364,41 +489,8 @@ function Hero({ onGetStarted }) {
   );
 }
 
-// ── Feature Card (3D tilt on hover) ───────────────────────────
-const cardEntrance = {
-  hidden: { opacity: 0, y: 48, scale: 0.94 },
-  visible: (i) => ({
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.55,
-      delay: i * 0.1,
-      ease: [0.22, 1, 0.36, 1],
-    },
-  }),
-};
-
+// ── Feature Card ───────────────────────────────────────────────
 function FeatureCard({ feature, index }) {
-  const cardRef = useRef(null);
-
-  const handleMouseMove = (e) => {
-    const el = cardRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 16;
-    const y = ((e.clientY - rect.top) / rect.height - 0.5) * -16;
-    el.style.transform = `perspective(900px) rotateX(${y}deg) rotateY(${x}deg) translateY(-6px) translateZ(10px)`;
-    el.style.transition = "none";
-  };
-
-  const handleMouseLeave = () => {
-    const el = cardRef.current;
-    if (!el) return;
-    el.style.transform = "";
-    el.style.transition = "transform 0.55s cubic-bezier(0.22,1,0.36,1)";
-  };
-
   return (
     <motion.div
       variants={cardEntrance}
@@ -406,26 +498,21 @@ function FeatureCard({ feature, index }) {
       whileInView="visible"
       viewport={{ once: true, margin: "-60px" }}
       custom={index}
-      className="group relative h-full"
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      className="h-full rounded-xl border border-[var(--pt-line)] bg-[var(--pt-panel)] overflow-hidden transition-colors duration-300 hover:border-[var(--pt-signal)]/50"
     >
-      {/* Hover glow halo */}
-      <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/25 via-violet-500/15 to-transparent blur-sm -z-10 pointer-events-none" />
+      <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-[var(--pt-line)]">
+        <span className="h-1.5 w-1.5 rounded-full bg-[var(--pt-mist)]/30" />
+        <span className="h-1.5 w-1.5 rounded-full bg-[var(--pt-mist)]/30" />
+        <span className="h-1.5 w-1.5 rounded-full bg-[var(--pt-mist)]/30" />
+        <span className="pt-mono text-[11px] text-[var(--pt-mist)] ml-1.5">{feature.file}</span>
+      </div>
 
-      {/* Card */}
-      <div className="relative h-full bg-card border border-border rounded-2xl p-8 group-hover:border-primary/40 transition-colors duration-300 overflow-hidden cursor-default">
-        {/* Shimmer sweep */}
-        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none" />
-
-        {/* Icon — scale + rotate on hover via CSS */}
-        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/20 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 ease-out">
-          <feature.icon className="h-6 w-6 text-primary" />
+      <div className="p-6">
+        <div className="h-10 w-10 rounded-lg bg-[var(--pt-signal)]/10 flex items-center justify-center mb-4">
+          <feature.icon className="h-5 w-5 text-[var(--pt-signal)]" />
         </div>
-
-        <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-        <p className="text-muted-foreground leading-relaxed text-sm">{feature.desc}</p>
+        <h3 className="pt-sans text-base font-semibold text-[var(--pt-chalk)] mb-2">{feature.title}</h3>
+        <p className="pt-sans text-[var(--pt-mist)] leading-relaxed text-sm">{feature.desc}</p>
       </div>
     </motion.div>
   );
@@ -433,57 +520,25 @@ function FeatureCard({ feature, index }) {
 
 // ── Features Section ───────────────────────────────────────────
 function Features() {
-  const sectionRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"],
-  });
-
-  // Decorative blobs move horizontally on scroll (parallax)
-  const blobRightX = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
-  const blobLeftX = useTransform(scrollYProgress, [0, 1], ["8%", "-8%"]);
-
   return (
-    <section
-      ref={sectionRef}
-      id="features"
-      className="relative py-32 px-6 overflow-hidden"
-    >
-      {/* Dot grid background */}
-      <div className="absolute inset-0 dot-grid opacity-40 dark:opacity-20 pointer-events-none" />
-
-      {/* Parallax glow blobs */}
-      <motion.div
-        style={{ x: blobRightX }}
-        className="absolute -right-40 top-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-primary/6 rounded-full blur-[80px] pointer-events-none"
-      />
-      <motion.div
-        style={{ x: blobLeftX }}
-        className="absolute -left-40 top-1/3 w-[360px] h-[360px] bg-violet-600/6 rounded-full blur-[80px] pointer-events-none"
-      />
-
-      <div className="max-w-6xl mx-auto relative">
-        {/* Section header */}
+    <section id="features" className="relative py-32 px-6">
+      <div className="max-w-6xl mx-auto">
         <motion.div
           variants={fadeUp}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="text-center mb-20"
+          className="mb-16 max-w-xl"
         >
-          <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
-            Features
-          </p>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-            Everything you need to prepare
+          <p className="pt-mono text-xs text-[var(--pt-signal)] mb-3">{"// what's inside"}</p>
+          <h2 className="pt-mono text-3xl md:text-4xl font-bold text-[var(--pt-chalk)] tracking-tight mb-4">
+            Six tools, one practice loop.
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            One platform to transform how you prepare for every stage of the
-            interview process.
+          <p className="pt-sans text-[var(--pt-mist)] leading-relaxed">
+            Every format ends the same way — a score, and exactly what to fix next.
           </p>
         </motion.div>
 
-        {/* Feature cards grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((f, i) => (
             <FeatureCard key={f.title} feature={f} index={i} />
@@ -504,26 +559,28 @@ function RoadmapSpotlight({ onGetStarted }) {
     { label: "Celebrate — and walk into your interview ready" },
   ];
 
-  return (
-    <section className="relative py-28 px-6 overflow-hidden">
-      {/* Subtle grid */}
-      <div className="absolute inset-0 dot-grid opacity-30 dark:opacity-15 pointer-events-none" />
+  const milestones = [
+    { done: true, label: "Update resume & profiles", tag: "done" },
+    { done: true, label: "Core React patterns deep-dive", tag: "done" },
+    { done: false, label: "System design fundamentals", tag: "up next", current: true },
+    { done: false, label: "Mock interview × 5 sessions", tag: "" },
+    { done: false, label: "Behavioural & leadership prep", tag: "" },
+  ];
 
-      <div className="max-w-6xl mx-auto relative">
+  return (
+    <section className="relative py-28 px-6 border-t border-[var(--pt-line)]">
+      <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-2 gap-16 items-center">
           {/* Left: text */}
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-5 leading-tight">
-              Your personal{" "}
-              <span className="gradient-text">learning roadmap</span>
+          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            <p className="pt-mono text-xs text-[var(--pt-signal)] mb-3">{"// where to start"}</p>
+            <h2 className="pt-mono text-3xl md:text-4xl font-bold text-[var(--pt-chalk)] tracking-tight mb-5 leading-tight">
+              Your personal <span className="text-[var(--pt-signal)]">learning roadmap</span>
             </h2>
-            <p className="text-muted-foreground leading-relaxed mb-8">
-              Don&apos;t know where to start? Tell PrepTalk where you are and where you want to go — the AI generates a step-by-step preparation plan calibrated to your exact skill gap, with every milestone linked to a specific feature.
+            <p className="pt-sans text-[var(--pt-mist)] leading-relaxed mb-8">
+              Don&apos;t know where to start? Tell PrepTalk where you are and where you want to
+              go — the AI generates a step-by-step preparation plan calibrated to your exact
+              skill gap, with every milestone linked to a specific feature.
             </p>
 
             <ul className="space-y-3 mb-10">
@@ -535,18 +592,21 @@ function RoadmapSpotlight({ onGetStarted }) {
                   whileInView="visible"
                   viewport={{ once: true }}
                   custom={i * 0.5}
-                  className="flex items-center gap-3 text-sm"
+                  className="pt-sans flex items-center gap-3 text-sm text-[var(--pt-chalk)]/90"
                 >
-                  <span className="h-6 w-6 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
-                    <Check className="h-3 w-3 text-primary" strokeWidth={3} />
+                  <span className="h-5 w-5 rounded-full bg-[var(--pt-signal)]/10 border border-[var(--pt-signal)]/30 flex items-center justify-center shrink-0">
+                    <Check className="h-3 w-3 text-[var(--pt-signal)]" strokeWidth={3} />
                   </span>
                   {s.label}
                 </motion.li>
               ))}
             </ul>
 
-            <Button onClick={onGetStarted} className="gap-2 px-8 h-12 glow-primary shadow-2xl shadow-primary/30">
-              Get my roadmap
+            <Button
+              onClick={onGetStarted}
+              className="pt-mono gap-2 px-8 h-12 bg-[var(--pt-signal)] text-[var(--pt-ink)] hover:bg-[var(--pt-signal)]/90 focus-visible:ring-[var(--pt-signal)]"
+            >
+              get my roadmap
               <ArrowRight className="h-4 w-4" />
             </Button>
           </motion.div>
@@ -560,59 +620,71 @@ function RoadmapSpotlight({ onGetStarted }) {
             custom={1}
             className="relative"
           >
-            {/* Glow behind card */}
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/15 to-emerald-500/10 blur-3xl rounded-3xl" />
+            <div className="absolute -inset-6 bg-[var(--pt-signal)]/[0.06] blur-3xl rounded-3xl pointer-events-none" />
 
-            <div className="relative rounded-2xl border border-border bg-card p-6 space-y-4 shadow-xl">
-              {/* Header */}
-              <div className="flex items-center gap-4 pb-4 border-b border-border">
+            <div className="relative rounded-2xl border border-[var(--pt-line)] bg-[var(--pt-panel)] p-6 space-y-4">
+              <div className="flex items-center gap-4 pb-4 border-b border-[var(--pt-line)]">
                 <div className="relative h-14 w-14 shrink-0">
                   <svg viewBox="0 0 56 56" className="h-14 w-14 -rotate-90">
-                    <circle cx={28} cy={28} r={22} fill="none" stroke="currentColor" strokeWidth={5} className="text-border/60" />
-                    <circle cx={28} cy={28} r={22} fill="none" strokeWidth={5} strokeLinecap="round"
-                      strokeDasharray={138} strokeDashoffset={69}
-                      stroke="url(#lp-grad)" />
-                    <defs>
-                      <linearGradient id="lp-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#8b5cf6" />
-                        <stop offset="100%" stopColor="#10b981" />
-                      </linearGradient>
-                    </defs>
+                    <circle cx={28} cy={28} r={22} fill="none" stroke="var(--pt-line)" strokeWidth={5} />
+                    <circle
+                      cx={28}
+                      cy={28}
+                      r={22}
+                      fill="none"
+                      strokeWidth={5}
+                      strokeLinecap="round"
+                      strokeDasharray={138}
+                      strokeDashoffset={69}
+                      stroke="var(--pt-signal)"
+                    />
                   </svg>
-                  <span className="absolute inset-0 flex items-center justify-center text-xs font-black">50%</span>
+                  <span className="absolute inset-0 flex items-center justify-center pt-mono text-xs font-bold text-[var(--pt-chalk)]">
+                    50%
+                  </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-primary font-bold mb-0.5">TARGET ROLE</p>
-                  <p className="font-black text-base truncate">Senior Frontend Dev</p>
-                  <div className="h-1.5 rounded-full bg-border/50 mt-2 overflow-hidden">
-                    <div className="h-full w-1/2 rounded-full bg-gradient-to-r from-violet-500 to-emerald-500" style={{ boxShadow: "0 0 8px rgba(139,92,246,0.5)" }} />
+                  <p className="pt-mono text-[11px] text-[var(--pt-signal)] font-bold mb-0.5">target role</p>
+                  <p className="pt-sans font-semibold text-base text-[var(--pt-chalk)] truncate">
+                    Senior Frontend Dev
+                  </p>
+                  <div className="h-1.5 rounded-full bg-[var(--pt-line)] mt-2 overflow-hidden">
+                    <div className="h-full w-1/2 rounded-full bg-[var(--pt-signal)]" />
                   </div>
                 </div>
               </div>
 
-              {/* Mock milestones */}
-              {[
-                { done: true,  label: "Update resume & profiles",    tag: "Done" },
-                { done: true,  label: "Core React patterns deep-dive", tag: "Done" },
-                { done: false, label: "System design fundamentals",   tag: "Up next", current: true },
-                { done: false, label: "Mock interview × 5 sessions",  tag: "" },
-                { done: false, label: "Behavioural & leadership prep", tag: "" },
-              ].map((m, i) => (
+              {milestones.map((m, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${
-                    m.done ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
-                    : m.current ? "border-2 border-primary bg-primary/10"
-                    : "border-2 border-border bg-card"
-                  }`}>
-                    {m.done && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
-                    {m.current && <div className="h-2 w-2 rounded-full bg-primary" />}
+                  <div
+                    className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 border ${
+                      m.done
+                        ? "bg-[var(--pt-signal)] border-[var(--pt-signal)]"
+                        : m.current
+                        ? "border-[var(--pt-signal)] bg-[var(--pt-signal)]/10"
+                        : "border-[var(--pt-line)] bg-transparent"
+                    }`}
+                  >
+                    {m.done && <Check className="h-3 w-3 text-[var(--pt-ink)]" strokeWidth={3} />}
+                    {m.current && <div className="h-1.5 w-1.5 rounded-full bg-[var(--pt-signal)]" />}
                   </div>
-                  <span className={`text-sm flex-1 ${m.done ? "line-through text-muted-foreground/60" : ""}`}>{m.label}</span>
+                  <span
+                    className={`pt-sans text-sm flex-1 ${
+                      m.done ? "line-through text-[var(--pt-mist)]" : "text-[var(--pt-chalk)]/90"
+                    }`}
+                  >
+                    {m.label}
+                  </span>
                   {m.tag && (
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      m.done ? "text-emerald-400 bg-emerald-500/10"
-                      : "text-primary bg-primary/10 border border-primary/20"
-                    }`}>{m.tag}</span>
+                    <span
+                      className={`pt-mono text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        m.done
+                          ? "text-[var(--pt-signal)] bg-[var(--pt-signal)]/10"
+                          : "text-[var(--pt-chalk)] bg-[var(--pt-line)]"
+                      }`}
+                    >
+                      {m.tag}
+                    </span>
                   )}
                 </div>
               ))}
@@ -626,47 +698,33 @@ function RoadmapSpotlight({ onGetStarted }) {
 
 // ── How It Works ───────────────────────────────────────────────
 function HowItWorks({ onGetStarted }) {
-  const sectionRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"],
-  });
-
-  // Background glow parallax
-  const bgGlowY = useTransform(scrollYProgress, [0, 1], ["0%", "25%"]);
+  const logLines = [
+    { t: "00:00", l: "session started — role: senior frontend" },
+    { t: "00:47", l: "answer scored 8/10 — strong on trade-offs" },
+    { t: "01:32", l: "follow-up asked — probing for depth" },
+    { t: "02:10", l: "session saved to your dashboard" },
+  ];
 
   return (
     <section
-      ref={sectionRef}
       id="how-it-works"
-      className="relative py-32 px-6 overflow-hidden bg-secondary/25"
+      className="relative py-32 px-6 border-t border-[var(--pt-line)] bg-[var(--pt-panel)]/30"
     >
-      {/* Parallax glow */}
-      <motion.div
-        style={{ y: bgGlowY }}
-        className="absolute inset-0 pointer-events-none"
-      >
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-primary/5 rounded-full blur-[120px]" />
-      </motion.div>
-
-      <div className="max-w-6xl mx-auto relative">
-        {/* Section header */}
+      <div className="max-w-6xl mx-auto">
         <motion.div
           variants={fadeUp}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="text-center mb-20"
+          className="mb-20 max-w-xl"
         >
-          <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
-            How it works
-          </p>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
+          <p className="pt-mono text-xs text-[var(--pt-signal)] mb-3">{"// the loop"}</p>
+          <h2 className="pt-mono text-3xl md:text-4xl font-bold text-[var(--pt-chalk)] tracking-tight">
             Three steps to interview&#8209;ready
           </h2>
         </motion.div>
 
-        {/* Steps */}
+        {/* Steps — a real ordered sequence, numbering earns its place */}
         <div className="grid md:grid-cols-3 gap-10 mb-20">
           {steps.map((s, i) => (
             <motion.div
@@ -676,57 +734,45 @@ function HowItWorks({ onGetStarted }) {
               whileInView="visible"
               viewport={{ once: true }}
               custom={i * 0.8}
-              className="flex flex-col items-center md:items-start text-center md:text-left"
             >
-              {/* Number badge */}
-              <div className="mb-6 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20">
-                <span className="text-xl font-black text-primary">{s.num}</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">{s.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                {s.desc}
-              </p>
+              <div className="pt-mono text-sm text-[var(--pt-signal)] mb-4">$ {s.num}</div>
+              <h3 className="pt-sans text-xl font-semibold text-[var(--pt-chalk)] mb-3">{s.title}</h3>
+              <p className="pt-sans text-[var(--pt-mist)] text-sm leading-relaxed">{s.desc}</p>
             </motion.div>
           ))}
         </div>
 
-        {/* CTA checklist box */}
+        {/* session.log recap — bookends the hero's live transcript */}
         <motion.div
           variants={fadeUp}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="relative rounded-3xl overflow-hidden border border-primary/20 bg-gradient-to-br from-primary/8 via-primary/4 to-transparent p-10 md:p-14"
+          className="relative rounded-2xl border border-[var(--pt-line)] bg-[var(--pt-panel)] overflow-hidden"
         >
-          {/* Corner glow */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-primary/12 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-violet-600/8 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+          <div className="flex items-center gap-2 px-6 py-3 border-b border-[var(--pt-line)]">
+            <span className="h-2 w-2 rounded-full bg-[var(--pt-mist)]/30" />
+            <span className="h-2 w-2 rounded-full bg-[var(--pt-mist)]/30" />
+            <span className="h-2 w-2 rounded-full bg-[var(--pt-mist)]/30" />
+            <span className="pt-mono text-xs text-[var(--pt-mist)] ml-2">session.log</span>
+          </div>
 
-          <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-10">
-            <div>
-              <h3 className="text-2xl md:text-3xl font-bold mb-6">
-                What you get with every session
-              </h3>
-              <ul className="space-y-3">
-                {[
-                  "Per-answer AI rating out of 10 with improvement tips",
-                  "No scheduling, no interviewer — practice on your own time",
-                  "Every session saved so you can track improvement over time",
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-3 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-10 p-8 md:p-12">
+            <ul className="space-y-3 pt-mono text-xs md:text-sm">
+              {logLines.map((row) => (
+                <li key={row.t} className="flex items-baseline gap-3">
+                  <span className="text-[var(--pt-mist)]">[{row.t}]</span>
+                  <span className="text-[var(--pt-chalk)]/90">{row.l}</span>
+                </li>
+              ))}
+            </ul>
 
             <Button
               size="lg"
               onClick={onGetStarted}
-              className="gap-2 px-9 h-13 text-base shadow-2xl shadow-primary/30 glow-primary flex-shrink-0"
+              className="pt-mono gap-2 px-9 h-12 text-sm bg-[var(--pt-signal)] text-[var(--pt-ink)] hover:bg-[var(--pt-signal)]/90 focus-visible:ring-[var(--pt-signal)] flex-shrink-0"
             >
-              Try it now — it&apos;s free
+              try it now — it&apos;s free
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -739,25 +785,21 @@ function HowItWorks({ onGetStarted }) {
 // ── Footer ─────────────────────────────────────────────────────
 function Footer() {
   return (
-    <footer className="border-t border-border py-10 px-6">
+    <footer className="border-t border-[var(--pt-line)] py-10 px-6">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <Image src="/logo.svg" width={24} height={24} alt="PrepTalk" />
-          <span className="font-semibold text-sm">PrepTalk</span>
+          <Image src="/logo.svg" width={22} height={22} alt="PrepTalk" />
+          <span className="pt-mono font-semibold text-sm text-[var(--pt-chalk)]">PrepTalk</span>
         </div>
-        <p className="text-xs text-muted-foreground">
-          © {new Date().getFullYear()} PrepTalk. Built with AI to help you land
-          your dream job.
+        <p className="pt-sans text-xs text-[var(--pt-mist)]">
+          © {new Date().getFullYear()} PrepTalk. Practice makes ready.
         </p>
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <a href="#features" className="hover:text-foreground transition-colors">
-            Features
+        <div className="flex items-center gap-4 pt-mono text-xs text-[var(--pt-mist)]">
+          <a href="#features" className="hover:text-[var(--pt-chalk)] transition-colors">
+            features
           </a>
-          <a
-            href="#how-it-works"
-            className="hover:text-foreground transition-colors"
-          >
-            How it works
+          <a href="#how-it-works" className="hover:text-[var(--pt-chalk)] transition-colors">
+            how-it-works
           </a>
         </div>
       </div>
@@ -771,7 +813,7 @@ export default function Home() {
   const handleGetStarted = () => router.push("/dashboard");
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="pt-landing min-h-screen bg-[var(--pt-ink)] text-[var(--pt-chalk)]">
       <Navbar onGetStarted={handleGetStarted} />
       <Hero onGetStarted={handleGetStarted} />
       <MarqueeBand />

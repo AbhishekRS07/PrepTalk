@@ -3,26 +3,36 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { RoleCombobox } from "@/components/ui/role-combobox";
 import { cn } from "@/lib/utils";
 import {
   Sparkles, RefreshCw, ChevronDown, ChevronUp,
   Check, X, Lightbulb, AlertTriangle, Star,
   Mic, MicOff, Loader2, ArrowRight, Brain,
   MessageSquare, Target, TrendingUp, RotateCcw,
+  Crown, Handshake, Trophy, Compass, Scale, Rocket,
 } from "lucide-react";
 
 // ── Constants ─────────────────────────────────────────────────────
 
+const JOB_ROLES = [
+  "Full Stack Developer", "Frontend Developer", "Backend Developer",
+  "React Developer", "Node.js Developer", "Python Developer", "Java Developer",
+  "Mobile Developer (Android)", "Mobile Developer (iOS)",
+  "Data Scientist", "Machine Learning Engineer", "DevOps Engineer", "QA Engineer",
+  "System Design", "Product Manager", "Senior Product Manager",
+  "HR Generalist", "HR Business Partner", "Technical Recruiter", "Talent Acquisition Manager",
+];
+
 const CATEGORIES = [
-  { id: "leadership",    label: "Leadership",          emoji: "👑", desc: "Ownership, influence, driving outcomes" },
-  { id: "conflict",      label: "Conflict & Teamwork",  emoji: "🤝", desc: "Disagreements, collaboration, difficult people" },
-  { id: "failure",       label: "Failure & Growth",     emoji: "📈", desc: "Mistakes, setbacks, what you learned" },
-  { id: "achievement",   label: "Achievement",          emoji: "🏆", desc: "Proudest wins, impact, going beyond" },
-  { id: "ambiguity",     label: "Ambiguity & Change",   emoji: "🧭", desc: "Uncertainty, pivoting, unclear requirements" },
-  { id: "prioritization",label: "Prioritization",       emoji: "⚖️",  desc: "Trade-offs, deadlines, competing priorities" },
-  { id: "initiative",    label: "Initiative",           emoji: "🚀", desc: "Going beyond, proactive improvements" },
-  { id: "feedback",      label: "Receiving Feedback",   emoji: "💬", desc: "Criticism, coaching, adapting your approach" },
+  { id: "leadership",    label: "Leadership",          icon: Crown,     desc: "Ownership, influence, driving outcomes" },
+  { id: "conflict",      label: "Conflict & Teamwork",  icon: Handshake, desc: "Disagreements, collaboration, difficult people" },
+  { id: "failure",       label: "Failure & Growth",     icon: TrendingUp,desc: "Mistakes, setbacks, what you learned" },
+  { id: "achievement",   label: "Achievement",          icon: Trophy,    desc: "Proudest wins, impact, going beyond" },
+  { id: "ambiguity",     label: "Ambiguity & Change",   icon: Compass,   desc: "Uncertainty, pivoting, unclear requirements" },
+  { id: "prioritization",label: "Prioritization",       icon: Scale,     desc: "Trade-offs, deadlines, competing priorities" },
+  { id: "initiative",    label: "Initiative",           icon: Rocket,    desc: "Going beyond, proactive improvements" },
+  { id: "feedback",      label: "Receiving Feedback",   icon: MessageSquare, desc: "Criticism, coaching, adapting your approach" },
 ];
 
 const EXPERIENCE_LEVELS = [
@@ -66,14 +76,19 @@ function ScoreRing({ score }) {
   const r = 28;
   const circ = 2 * Math.PI * r;
   const offset = circ * (1 - score / 10);
-  const color = score >= 7.5 ? "#10b981" : score >= 5 ? "#f59e0b" : "#ef4444";
+  const colorClass = score >= 7.5
+    ? "text-emerald-600 dark:text-emerald-400"
+    : score >= 5
+    ? "text-amber-600 dark:text-amber-400"
+    : "text-red-600 dark:text-red-400";
 
   return (
     <div className="relative h-16 w-16 shrink-0">
       <svg width={64} height={64} viewBox="0 0 64 64">
         <circle cx={32} cy={32} r={r} fill="none" stroke="currentColor" strokeWidth={5} className="text-border/60" />
         <motion.circle cx={32} cy={32} r={r} fill="none"
-          stroke={color} strokeWidth={5} strokeLinecap="round"
+          stroke="currentColor" strokeWidth={5} strokeLinecap="round"
+          className={colorClass}
           strokeDasharray={circ}
           initial={{ strokeDashoffset: circ }}
           animate={{ strokeDashoffset: offset }}
@@ -82,7 +97,7 @@ function ScoreRing({ score }) {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-base font-black tabular-nums">{score}</span>
+        <span className={cn("text-base font-black font-mono tabular-nums", colorClass)}>{score}</span>
       </div>
     </div>
   );
@@ -132,14 +147,14 @@ function FeedbackPanel({ feedback, onRetry, onNext }) {
       <div className="flex items-center gap-4 bg-card border border-border rounded-2xl p-5">
         <ScoreRing score={feedback.score} />
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">STAR Score</p>
+          <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider mb-1">STAR Score</p>
           <p className="font-bold text-sm leading-snug">{feedback.verdict}</p>
         </div>
       </div>
 
       {/* STAR breakdown */}
       <div className="space-y-2">
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">STAR Breakdown</p>
+        <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider">STAR Breakdown</p>
         <StarBreakdown breakdown={feedback.starBreakdown} />
       </div>
 
@@ -359,23 +374,31 @@ export default function BehavioralPage() {
     <div className="max-w-2xl mx-auto px-4 pt-6 pb-20">
 
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-1">
+      <div className="mb-8 flex items-center gap-3">
+        <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
           <Brain className="h-5 w-5 text-primary" />
-          <h1 className="text-2xl font-black tracking-tight">Behavioral Practice</h1>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Practice STAR-method answers with AI coaching — pick a category and get instant structured feedback.
-        </p>
+        <div>
+          <h1 className="text-2xl font-black tracking-tight">Behavioral Practice</h1>
+          <p className="text-sm text-muted-foreground">
+            Practice STAR-method answers with AI coaching — pick a category and get instant structured feedback.
+          </p>
+        </div>
       </div>
 
       {/* Setup */}
       <div className="bg-card border border-border rounded-2xl p-5 mb-6 space-y-4">
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Your context (optional)</p>
+        <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider">Your context (optional)</p>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">Target role</label>
-            <Input placeholder="e.g. Senior Engineer" value={role} onChange={(e) => setRole(e.target.value)} className="h-9 text-sm" />
+            <RoleCombobox
+              options={JOB_ROLES}
+              placeholder="e.g. Senior Engineer, HR Generalist"
+              value={role}
+              onChange={setRole}
+              className="h-9 text-sm"
+            />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">Experience</label>
@@ -390,7 +413,7 @@ export default function BehavioralPage() {
       {/* Category grid */}
       {!selectedCat && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Choose a category</p>
+          <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider mb-3">Choose a category</p>
           <div className="grid grid-cols-2 gap-3">
             {CATEGORIES.map((cat) => (
               <motion.button
@@ -399,7 +422,9 @@ export default function BehavioralPage() {
                 onClick={() => generateQuestion(cat.id)}
                 className="flex items-start gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
               >
-                <span className="text-2xl">{cat.emoji}</span>
+                <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
+                  <cat.icon className="h-4.5 w-4.5 text-primary" />
+                </div>
                 <div>
                   <p className="font-bold text-sm group-hover:text-primary transition-colors">{cat.label}</p>
                   <p className="text-xs text-muted-foreground leading-relaxed">{cat.desc}</p>
@@ -417,7 +442,7 @@ export default function BehavioralPage() {
             {/* Category badge + back */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <span className="text-xl">{cat?.emoji}</span>
+                {cat?.icon && <cat.icon className="h-4 w-4 text-primary" />}
                 <span className="font-bold text-sm">{cat?.label}</span>
               </div>
               <button onClick={handleReset} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
@@ -440,7 +465,7 @@ export default function BehavioralPage() {
               <div className="space-y-4">
                 {/* Question card */}
                 <div className="bg-card border border-primary/30 rounded-2xl p-5 space-y-3">
-                  <p className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+                  <p className="text-xs font-bold font-mono text-primary uppercase tracking-wider flex items-center gap-1.5">
                     <MessageSquare className="h-3.5 w-3.5" /> Interview Question
                   </p>
                   <p className="font-semibold text-base leading-snug">{question.question}</p>
@@ -450,20 +475,24 @@ export default function BehavioralPage() {
                   <div className="grid grid-cols-2 gap-3 pt-1">
                     {question.tips?.length > 0 && (
                       <div className="space-y-1">
-                        <p className="text-xs font-bold text-emerald-400">✓ Tips</p>
+                        <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          <Check className="h-3 w-3" /> Tips
+                        </p>
                         {question.tips.map((t, i) => (
                           <p key={i} className="text-xs text-muted-foreground flex gap-1.5">
-                            <span className="text-emerald-400 shrink-0">·</span>{t}
+                            <span className="text-emerald-600 dark:text-emerald-400 shrink-0">·</span>{t}
                           </p>
                         ))}
                       </div>
                     )}
                     {question.redFlags?.length > 0 && (
                       <div className="space-y-1">
-                        <p className="text-xs font-bold text-red-400">⚠ Avoid</p>
+                        <p className="text-xs font-bold text-red-600 dark:text-red-400 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" /> Avoid
+                        </p>
                         {question.redFlags.map((f, i) => (
                           <p key={i} className="text-xs text-muted-foreground flex gap-1.5">
-                            <span className="text-red-400 shrink-0">·</span>{f}
+                            <span className="text-red-600 dark:text-red-400 shrink-0">·</span>{f}
                           </p>
                         ))}
                       </div>
@@ -473,7 +502,9 @@ export default function BehavioralPage() {
                   {/* Example opener */}
                   {question.exampleOpener && (
                     <div className="bg-secondary/40 rounded-xl px-3 py-2.5 mt-1">
-                      <p className="text-xs font-bold text-muted-foreground mb-1">💡 Strong opener</p>
+                      <p className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1">
+                        <Lightbulb className="h-3 w-3" /> Strong opener
+                      </p>
                       <p className="text-xs text-foreground/80 italic">"{question.exampleOpener}…"</p>
                     </div>
                   )}
@@ -493,7 +524,7 @@ export default function BehavioralPage() {
                     onClick={() => setShowGuide((p) => !p)}
                     className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold hover:bg-secondary/30 transition-colors"
                   >
-                    <span className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    <span className="flex items-center gap-2 text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider">
                       <Target className="h-4 w-4" /> STAR framework guide
                     </span>
                     {showGuide ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -515,7 +546,7 @@ export default function BehavioralPage() {
                 {/* Answer input or feedback */}
                 {!feedback ? (
                   <div className="space-y-2">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Your answer</p>
+                    <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider">Your answer</p>
                     <AnswerInput onSubmit={handleAnswer} loading={loadingF} />
                     {loadingF && (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -525,7 +556,7 @@ export default function BehavioralPage() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                       <TrendingUp className="h-3.5 w-3.5" /> Feedback
                     </p>
                     <FeedbackPanel feedback={feedback} onRetry={handleRetry} onNext={handleNext} />

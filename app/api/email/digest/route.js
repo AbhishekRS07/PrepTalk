@@ -77,16 +77,16 @@ function buildEmail({ username, email, weekSessions, weekAvg, allTimeAvg, improv
     <div style="margin-bottom:20px;">
       <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:1px;">Roadmap Progress</p>
       <div style="background:#1f2937;border-radius:100px;height:8px;overflow:hidden;">
-        <div style="background:linear-gradient(90deg,#8b5cf6,#10b981);height:100%;width:${roadmapPct}%;border-radius:100px;"></div>
+        <div style="background:linear-gradient(90deg,#39f2a0,#10b981);height:100%;width:${roadmapPct}%;border-radius:100px;"></div>
       </div>
       <p style="margin:6px 0 0;font-size:12px;color:#71717a;">${roadmapPct}% of milestones complete</p>
     </div>` : "";
 
   const interviewBlock = nextInterview ? `
-    <div style="background:linear-gradient(135deg,#1e1b4b,#0f172a);border:1px solid #3730a3;border-radius:12px;padding:16px 18px;margin-bottom:20px;">
-      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:1px;">📅 Upcoming Interview</p>
+    <div style="background:linear-gradient(135deg,#0d3d2a,#0f172a);border:1px solid #1a6b4a;border-radius:12px;padding:16px 18px;margin-bottom:20px;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#39f2a0;text-transform:uppercase;letter-spacing:1px;">📅 Upcoming Interview</p>
       <p style="margin:0;font-size:16px;font-weight:800;color:#fff;">${nextInterview.company} — ${nextInterview.role}</p>
-      <p style="margin:4px 0 0;font-size:13px;color:#a5b4fc;">
+      <p style="margin:4px 0 0;font-size:13px;color:#8de9c0;">
         ${nextInterview.days === 0 ? "Today!" : nextInterview.days === 1 ? "Tomorrow!" : `${nextInterview.days} days away`}
       </p>
     </div>` : "";
@@ -121,7 +121,7 @@ function buildEmail({ username, email, weekSessions, weekAvg, allTimeAvg, improv
           <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
             <tr>
               <td width="33%" style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px;text-align:center;">
-                <p style="margin:0;font-size:28px;font-weight:800;color:#8b5cf6;">${weekSessions}</p>
+                <p style="margin:0;font-size:28px;font-weight:800;color:#39f2a0;">${weekSessions}</p>
                 <p style="margin:4px 0 0;font-size:11px;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Sessions</p>
               </td>
               <td width="4%"/>
@@ -149,12 +149,12 @@ function buildEmail({ username, email, weekSessions, weekAvg, allTimeAvg, improv
 
           ${roadmapBlock}
 
-          <div style="background:linear-gradient(135deg,#4c1d95,#1e1b4b);border-radius:12px;padding:16px 20px;margin-bottom:28px;">
-            <p style="margin:0;font-size:14px;color:#e0d9ff;line-height:1.6;">${motivationalLine(weekSessions, weekAvg, streak)}</p>
+          <div style="background:linear-gradient(135deg,#0d4a2f,#0f172a);border-radius:12px;padding:16px 20px;margin-bottom:28px;">
+            <p style="margin:0;font-size:14px;color:#c8f5e0;line-height:1.6;">${motivationalLine(weekSessions, weekAvg, streak)}</p>
           </div>
 
           <div style="text-align:center;">
-            <a href="${appUrl}/dashboard" style="display:inline-block;background:#8b5cf6;color:#ffffff;font-size:14px;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;">
+            <a href="${appUrl}/dashboard" style="display:inline-block;background:#39f2a0;color:#0a0d0c;font-size:14px;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;">
               ${hasActivity ? "View Analytics →" : "Start Practicing →"}
             </a>
           </div>

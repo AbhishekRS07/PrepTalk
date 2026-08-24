@@ -144,7 +144,7 @@ export default function UpgradePage() {
               )}
             >
               {plan.badge && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold whitespace-nowrap">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold font-mono whitespace-nowrap">
                   {plan.badge}
                 </div>
               )}
@@ -159,7 +159,7 @@ export default function UpgradePage() {
                   <p className="text-xs text-muted-foreground mt-0.5">{plan.description}</p>
                 </div>
                 <div className="flex items-end gap-1">
-                  <span className="text-4xl font-black">{plan.price}</span>
+                  <span className="text-4xl font-black font-mono">{plan.price}</span>
                   <span className="text-sm text-muted-foreground mb-1">/ {plan.period}</span>
                 </div>
               </div>
@@ -226,14 +226,10 @@ export default function UpgradePage() {
           <Zap className="h-3.5 w-3.5" />
           Pro plan coming soon
         </div>
-        <h2 className="text-2xl font-black">Want early access to Pro?</h2>
+        <h2 className="text-2xl font-black">Pro is on the way</h2>
         <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-          We're launching paid plans soon. Be the first to know and get a launch discount.
+          Unlimited practice, priority AI speed, and PDF exports — we're building it next.
         </p>
-        <Button size="lg" className="gap-2 mt-2" disabled>
-          <Sparkles className="h-4 w-4" />
-          Join Waitlist — Coming Soon
-        </Button>
       </motion.div>
     </div>
   );

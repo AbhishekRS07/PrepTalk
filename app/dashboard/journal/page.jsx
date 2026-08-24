@@ -32,10 +32,10 @@ const FEELINGS = [
 
 const OUTCOMES = [
   { value: "waiting",  label: "Waiting",    emoji: "⏳", color: "text-muted-foreground" },
-  { value: "offer",    label: "Got offer",  emoji: "🎉", color: "text-emerald-400" },
-  { value: "rejected", label: "Rejected",   emoji: "❌", color: "text-red-400" },
+  { value: "offer",    label: "Got offer",  emoji: "🎉", color: "text-emerald-600 dark:text-emerald-400" },
+  { value: "rejected", label: "Rejected",   emoji: "❌", color: "text-red-600 dark:text-red-400" },
   { value: "withdrew", label: "Withdrew",   emoji: "🚪", color: "text-muted-foreground" },
-  { value: "next",     label: "Next round", emoji: "➡️", color: "text-blue-400" },
+  { value: "next",     label: "Next round", emoji: "➡️", color: "text-blue-600 dark:text-blue-400" },
 ];
 
 const FEELING_MAP  = Object.fromEntries(FEELINGS.map((f) => [f.value, f]));
@@ -286,7 +286,7 @@ function JournalCard({ entry, onEdit, onDelete }) {
             <div className="px-5 pb-5 space-y-4 border-t border-border/40 pt-4">
               {entry.questions_asked && (
                 <div className="space-y-1.5">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                     <MessageSquare className="h-3.5 w-3.5" /> What you were asked
                   </p>
                   <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/80">{entry.questions_asked}</p>
@@ -295,7 +295,7 @@ function JournalCard({ entry, onEdit, onDelete }) {
 
               {entry.how_it_went && (
                 <div className="space-y-1.5">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5" /> Reflection
                   </p>
                   <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/80">{entry.how_it_went}</p>
@@ -304,7 +304,7 @@ function JournalCard({ entry, onEdit, onDelete }) {
 
               {entry.what_to_improve && (
                 <div className="space-y-1.5 bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
-                  <p className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <p className="text-xs font-bold font-mono text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Lightbulb className="h-3.5 w-3.5" /> What to improve
                   </p>
                   <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/80">{entry.what_to_improve}</p>
@@ -356,12 +356,12 @@ function StatsBar({ entries }) {
     <div className="grid grid-cols-4 gap-3 mb-6">
       {[
         { label: "Total entries", value: total,   color: "text-foreground" },
-        { label: "Offers",        value: offers,  color: "text-emerald-400" },
-        { label: "Felt good",     value: great,   color: "text-blue-400" },
-        { label: "With notes",    value: improve, color: "text-amber-400" },
+        { label: "Offers",        value: offers,  color: "text-emerald-600 dark:text-emerald-400" },
+        { label: "Felt good",     value: great,   color: "text-blue-600 dark:text-blue-400" },
+        { label: "With notes",    value: improve, color: "text-amber-600 dark:text-amber-400" },
       ].map((s) => (
         <div key={s.label} className="bg-card border border-border rounded-xl p-3 text-center">
-          <div className={cn("text-2xl font-black", s.color)}>{s.value}</div>
+          <div className={cn("text-2xl font-black font-mono", s.color)}>{s.value}</div>
           <div className="text-xs text-muted-foreground mt-0.5">{s.label}</div>
         </div>
       ))}
@@ -435,12 +435,17 @@ export default function JournalPage() {
     <div className="max-w-2xl mx-auto pb-20 px-4 pt-6">
 
       {/* Page header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">Interview Journal</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Record every real interview — questions asked, reflections, and what to improve.
-          </p>
+      <div className="flex items-start justify-between mb-6 gap-4">
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+            <BookOpen className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight">Interview Journal</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Record every real interview — questions asked, reflections, and what to improve.
+            </p>
+          </div>
         </div>
         {!showForm && !editEntry && (
           <Button onClick={() => setShowForm(true)} className="gap-2 shrink-0">

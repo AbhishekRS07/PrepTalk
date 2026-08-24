@@ -7,10 +7,10 @@ import { Trophy, Medal, Loader2, BarChart3, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fadeUp } from "@/lib/animations";
 
-const ratingColor = (r) => {
-  if (r >= 7.5) return "#10b981";
-  if (r >= 5)   return "#f59e0b";
-  return "#ef4444";
+const ratingColorClass = (r) => {
+  if (r >= 7.5) return "text-emerald-600 dark:text-emerald-400";
+  if (r >= 5)   return "text-amber-600 dark:text-amber-400";
+  return "text-red-600 dark:text-red-400";
 };
 
 const MEDAL = {
@@ -75,7 +75,7 @@ export default function LeaderboardPage() {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-black" style={{ color: ratingColor(myRow.avg) }}>
+            <p className={cn("text-2xl font-black font-mono", ratingColorClass(myRow.avg))}>
               #{myRow.rank}
             </p>
             <p className="text-xs text-muted-foreground">{myRow.avg}/10 avg</p>
@@ -121,7 +121,7 @@ export default function LeaderboardPage() {
         </div>
       ) : (
         <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-border grid grid-cols-12 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="px-5 py-3 border-b border-border grid grid-cols-12 text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wider">
             <span className="col-span-1">#</span>
             <span className="col-span-5">User</span>
             <span className="col-span-3 text-right">Avg Score</span>
@@ -148,7 +148,7 @@ export default function LeaderboardPage() {
                     {medal ? (
                       <span className="text-base">{medal.icon}</span>
                     ) : (
-                      <span className="text-sm font-bold text-muted-foreground">{r.rank}</span>
+                      <span className="text-sm font-bold font-mono text-muted-foreground">{r.rank}</span>
                     )}
                   </span>
 
@@ -171,13 +171,12 @@ export default function LeaderboardPage() {
                   </div>
 
                   {/* Avg */}
-                  <span className="col-span-3 text-right text-sm font-black"
-                    style={{ color: ratingColor(r.avg) }}>
+                  <span className={cn("col-span-3 text-right text-sm font-black font-mono", ratingColorClass(r.avg))}>
                     {r.avg}/10
                   </span>
 
                   {/* Sessions */}
-                  <span className="col-span-3 text-right text-sm text-muted-foreground">
+                  <span className="col-span-3 text-right text-sm font-mono text-muted-foreground">
                     {r.totalSessions}
                   </span>
                 </motion.div>

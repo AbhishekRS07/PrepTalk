@@ -164,7 +164,7 @@ function CompanySlot({ entry, index, total, onChange, onRemove }) {
       {/* JD input */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Job Description</label>
+          <label className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide">Job Description</label>
           <button type="button" onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
             <Upload className="h-3 w-3" /> Upload PDF
@@ -314,7 +314,7 @@ function QuestionCard({ item, index, resultMetas, isBookmarked, onToggle }) {
             <div className="px-5 pb-5 pt-1 border-t border-border">
               <div className="flex items-center gap-1.5 mb-2 mt-3">
                 <Bot className="h-3.5 w-3.5 text-primary" />
-                <p className="text-xs font-semibold text-primary uppercase tracking-wide">Model Answer</p>
+                <p className="text-xs font-semibold font-mono text-primary uppercase tracking-wide">Model Answer</p>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">{item.answer}</p>
             </div>
@@ -482,8 +482,8 @@ export default function JDPrepPage() {
 
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center shrink-0">
-          <Building2 className="h-6 w-6 text-blue-500" />
+        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+          <Building2 className="h-6 w-6 text-primary" />
         </div>
         <div>
           <h1 className="text-2xl font-black tracking-tight">JD Interview Prep</h1>
@@ -561,7 +561,7 @@ export default function JDPrepPage() {
                 { icon: BookOpen,  text: "Save any or all questions to your Study tab (Bookmarks)" },
               ].map(({ icon: Icon, text }, i) => (
                 <div key={i} className="flex items-start gap-2.5">
-                  <Icon className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                  <Icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   <p className="text-sm text-muted-foreground">{text}</p>
                 </div>
               ))}

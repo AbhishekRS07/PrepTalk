@@ -6,12 +6,22 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RoleCombobox } from "@/components/ui/role-combobox";
 import {
   FileText, Upload, X, ArrowLeft, Sparkles,
   Loader2, CheckCircle2, AlertCircle, BookOpen,
   Trash2, RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const JOB_ROLES = [
+  "Full Stack Developer", "Frontend Developer", "Backend Developer",
+  "React Developer", "Node.js Developer", "Python Developer", "Java Developer",
+  "Mobile Developer (Android)", "Mobile Developer (iOS)",
+  "Data Scientist", "Machine Learning Engineer", "DevOps Engineer", "QA Engineer",
+  "System Design", "Product Manager", "Senior Product Manager",
+  "HR Generalist", "HR Business Partner", "Technical Recruiter", "Talent Acquisition Manager",
+];
 
 export default function ResumeInterviewPage() {
   const router = useRouter();
@@ -125,8 +135,8 @@ export default function ResumeInterviewPage() {
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="h-12 w-12 rounded-2xl bg-violet-500/10 flex items-center justify-center">
-          <FileText className="h-6 w-6 text-violet-500" />
+        <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <FileText className="h-6 w-6 text-primary" />
         </div>
         <div>
           <h1 className="text-2xl font-black tracking-tight">Resume Interview</h1>
@@ -139,12 +149,12 @@ export default function ResumeInterviewPage() {
         <p className="text-sm font-medium">What makes this different</p>
         <ul className="space-y-1.5 text-sm text-muted-foreground">
           {[
-            "Questions reference your actual projects, companies, and tech stack",
+            "Questions reference your actual roles, companies, and experience",
             "AI probes specific claims from your resume — no generic questions",
             "Same feedback and analytics as regular mock interviews",
           ].map((t) => (
             <li key={t} className="flex items-start gap-2">
-              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-violet-500 shrink-0" />
+              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
               {t}
             </li>
           ))}
@@ -162,14 +172,14 @@ export default function ResumeInterviewPage() {
               className={cn(
                 "rounded-2xl border p-4 transition-colors duration-200",
                 useSaved
-                  ? "bg-violet-500/8 border-violet-500/30"
+                  ? "bg-primary/8 border-primary/30"
                   : "bg-card border-border"
               )}
             >
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="h-9 w-9 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
-                    <BookOpen className="h-4.5 w-4.5 text-violet-500" />
+                  <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <BookOpen className="h-4.5 w-4.5 text-primary" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate">{savedResumeName}</p>
@@ -197,8 +207,8 @@ export default function ResumeInterviewPage() {
                   className={cn(
                     "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium border transition-all",
                     useSaved
-                      ? "bg-violet-500 text-white border-violet-500 shadow-md shadow-violet-500/20"
-                      : "border-border text-muted-foreground hover:border-violet-500/50 hover:text-foreground"
+                      ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                      : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
                   )}
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" />
@@ -234,9 +244,9 @@ export default function ResumeInterviewPage() {
             <AnimatePresence mode="wait">
               {file ? (
                 <motion.div key="file" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }}
-                  className="flex items-center gap-3 p-4 bg-violet-500/5 border border-violet-500/30 rounded-xl">
-                  <div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
-                    <FileText className="h-5 w-5 text-violet-500" />
+                  className="flex items-center gap-3 p-4 bg-primary/5 border border-primary/30 rounded-xl">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <FileText className="h-5 w-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{file.name}</p>
@@ -246,7 +256,7 @@ export default function ResumeInterviewPage() {
                     className="h-7 w-7 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors shrink-0">
                     <X className="h-4 w-4 text-muted-foreground" />
                   </button>
-                  <CheckCircle2 className="h-5 w-5 text-violet-500 shrink-0" />
+                  <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
                 </motion.div>
               ) : (
                 <motion.div key="dropzone" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -256,12 +266,12 @@ export default function ResumeInterviewPage() {
                   onClick={() => fileInputRef.current?.click()}
                   className={cn(
                     "border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200",
-                    dragging ? "border-violet-500 bg-violet-500/5" : "border-border hover:border-violet-500/50 hover:bg-accent"
+                    dragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-accent"
                   )}
                 >
                   <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors duration-200",
-                    dragging ? "bg-violet-500/15" : "bg-secondary")}>
-                    <Upload className={cn("h-6 w-6 transition-colors duration-200", dragging ? "text-violet-500" : "text-muted-foreground")} />
+                    dragging ? "bg-primary/15" : "bg-secondary")}>
+                    <Upload className={cn("h-6 w-6 transition-colors duration-200", dragging ? "text-primary" : "text-muted-foreground")} />
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-medium">{dragging ? "Drop it here" : "Drop your PDF here"}</p>
@@ -281,7 +291,7 @@ export default function ResumeInterviewPage() {
                   type="checkbox"
                   checked={saveToProfile}
                   onChange={(e) => setSaveToProfile(e.target.checked)}
-                  className="h-4 w-4 rounded border-border accent-violet-500"
+                  className="h-4 w-4 rounded border-border accent-primary"
                 />
                 <span className="text-sm text-muted-foreground">
                   Save this resume to my profile for next time
@@ -296,8 +306,12 @@ export default function ResumeInterviewPage() {
           <label className="text-sm font-medium">
             Target Role <span className="text-muted-foreground font-normal">(optional)</span>
           </label>
-          <Input placeholder="e.g. Senior Frontend Engineer" value={jobPosition}
-            onChange={(e) => setJobPosition(e.target.value)} />
+          <RoleCombobox
+            options={JOB_ROLES}
+            placeholder="e.g. Senior Frontend Engineer, HR Generalist"
+            value={jobPosition}
+            onChange={setJobPosition}
+          />
         </div>
 
         <div className="space-y-1.5">

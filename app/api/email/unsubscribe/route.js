@@ -35,7 +35,7 @@ export async function GET(req) {
     <p style="font-size:40px;margin:0 0 16px">✅</p>
     <h1 style="font-size:22px;font-weight:800;margin:0 0 8px">Unsubscribed</h1>
     <p style="color:#71717a;margin:0 0 24px;font-size:14px">You won't receive weekly digest emails anymore. You can re-enable them anytime from your dashboard settings.</p>
-    <a href="${appUrl}/dashboard/settings" style="background:#8b5cf6;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">Go to Settings</a>
+    <a href="${appUrl}/dashboard/settings" style="background:#39f2a0;color:#0a0d0c;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">Go to Settings</a>
   </div>
 </body></html>`, { headers: { "Content-Type": "text/html" } });
 }

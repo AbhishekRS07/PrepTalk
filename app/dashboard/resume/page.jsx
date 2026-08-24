@@ -19,9 +19,9 @@ function ScoreRing({ score, size = 120, strokeWidth = 10, label }) {
   const dash = score != null ? (score / 100) * circ : 0;
   const color =
     score == null ? "text-muted-foreground/40"
-    : score >= 80 ? "text-emerald-400"
-    : score >= 60 ? "text-amber-400"
-    : "text-red-400";
+    : score >= 80 ? "text-emerald-600 dark:text-emerald-400"
+    : score >= 60 ? "text-amber-600 dark:text-amber-400"
+    : "text-red-600 dark:text-red-400";
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -39,7 +39,7 @@ function ScoreRing({ score, size = 120, strokeWidth = 10, label }) {
             transition={{ duration: 1.2, ease: "easeOut" }} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn("text-2xl font-black", color)}>
+          <span className={cn("text-2xl font-black font-mono", color)}>
             {score != null ? score : "—"}
           </span>
           {score != null && <span className="text-[10px] text-muted-foreground">/100</span>}
@@ -55,9 +55,9 @@ function ScoreRing({ score, size = 120, strokeWidth = 10, label }) {
 function SectionBar({ label, score, status, feedback }) {
   const [open, setOpen] = useState(false);
   const statusIcon =
-    status === "good" ? <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-    : status === "needs_work" ? <AlertTriangle className="h-4 w-4 text-amber-400" />
-    : <XCircle className="h-4 w-4 text-red-400" />;
+    status === "good" ? <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+    : status === "needs_work" ? <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+    : <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />;
   const barColor =
     score >= 80 ? "bg-emerald-500"
     : score >= 60 ? "bg-amber-500"
@@ -164,7 +164,7 @@ function UploadZone({ file, setFile, hasSaved }) {
 function PriorityBadge({ priority }) {
   return (
     <span className={cn(
-      "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+      "text-[10px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-full",
       priority === "high" ? "bg-red-500/15 text-red-400"
       : priority === "medium" ? "bg-amber-500/15 text-amber-400"
       : "bg-emerald-500/15 text-emerald-400"
@@ -235,12 +235,16 @@ export default function ResumePage() {
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
         <div className="flex items-center gap-3 mb-1">
-          <FileText className="h-5 w-5 text-primary" />
-          <h1 className="text-2xl font-black tracking-tight">Resume Analyzer</h1>
+          <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+            <FileText className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight">Resume Analyzer</h1>
+            <p className="text-sm text-muted-foreground">
+              Get an ATS score, keyword gaps, and actionable fixes — instantly.
+            </p>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Get an ATS score, keyword gaps, and actionable fixes — instantly.
-        </p>
       </motion.div>
 
       <AnimatePresence mode="wait">
@@ -248,7 +252,7 @@ export default function ResumePage() {
           <motion.div key="upload" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             {/* Upload */}
             <div className="bg-card border border-border rounded-2xl p-6 mb-4">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4">
+              <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider mb-4">
                 Upload Resume
               </p>
               <UploadZone file={file} setFile={(f) => { setFile(f); setUseSaved(false); }} hasSaved={hasSaved} />
@@ -333,7 +337,7 @@ export default function ResumePage() {
             {/* Score overview */}
             <div className="bg-card border border-border rounded-2xl p-6 mb-4">
               <div className="flex items-center justify-between mb-6">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Overall Analysis</p>
+                <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider">Overall Analysis</p>
                 <button onClick={reset} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
                   <RotateCcw className="h-3.5 w-3.5" />
                   Analyze another
@@ -355,7 +359,7 @@ export default function ResumePage() {
 
             {/* Section scores */}
             <div className="bg-card border border-border rounded-2xl p-6 mb-4">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4">Section Breakdown</p>
+              <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider mb-4">Section Breakdown</p>
               <div className="space-y-2">
                 {Object.entries(result.sections || {}).map(([key, val]) => (
                   <SectionBar key={key} label={SECTION_LABELS[key] || key} score={val.score} status={val.status} feedback={val.feedback} />
@@ -368,13 +372,13 @@ export default function ResumePage() {
               {result.keyStrengths?.length > 0 && (
                 <div className="bg-card border border-border rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <Shield className="h-4 w-4 text-emerald-400" />
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Key Strengths</p>
+                    <Shield className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider">Key Strengths</p>
                   </div>
                   <ul className="space-y-2">
                     {result.keyStrengths.map((s, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                         {s}
                       </li>
                     ))}
@@ -385,13 +389,13 @@ export default function ResumePage() {
               {result.criticalIssues?.length > 0 && (
                 <div className="bg-card border border-border rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <AlertCircle className="h-4 w-4 text-red-400" />
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Critical Issues</p>
+                    <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider">Critical Issues</p>
                   </div>
                   <ul className="space-y-2">
                     {result.criticalIssues.map((s, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm">
-                        <XCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+                        <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
                         {s}
                       </li>
                     ))}
@@ -405,12 +409,12 @@ export default function ResumePage() {
               <div className="bg-card border border-border rounded-2xl p-6 mb-4">
                 <div className="flex items-center gap-2 mb-4">
                   <Tag className="h-4 w-4 text-primary" />
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Keyword Analysis</p>
+                  <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider">Keyword Analysis</p>
                 </div>
 
                 {result.presentKeywords?.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-xs font-semibold text-emerald-400 mb-2">Found in your resume</p>
+                    <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-2">Found in your resume</p>
                     <div className="flex flex-wrap gap-2">
                       {result.presentKeywords.map((kw, i) => (
                         <span key={i} className="text-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-2.5 py-1 rounded-full font-medium">
@@ -423,7 +427,7 @@ export default function ResumePage() {
 
                 {result.missingKeywords?.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-red-400 mb-2">Missing from your resume</p>
+                    <p className="text-xs font-semibold text-red-600 dark:text-red-400 mb-2">Missing from your resume</p>
                     <div className="flex flex-wrap gap-2">
                       {result.missingKeywords.map((kw, i) => (
                         <span key={i} className="text-xs bg-red-500/15 text-red-400 border border-red-500/25 px-2.5 py-1 rounded-full font-medium">
@@ -441,7 +445,7 @@ export default function ResumePage() {
               <div className="bg-card border border-border rounded-2xl p-6 mb-4">
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp className="h-4 w-4 text-primary" />
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Action Items</p>
+                  <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider">Action Items</p>
                 </div>
                 <div className="space-y-3">
                   {result.improvements
@@ -470,8 +474,8 @@ export default function ResumePage() {
                   className="w-full flex items-center justify-between"
                 >
                   <div className="flex items-center gap-2">
-                    <Lightbulb className="h-4 w-4 text-amber-400" />
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Suggested Summary Rewrite</p>
+                    <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider">Suggested Summary Rewrite</p>
                   </div>
                   {showRewrite ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                 </button>

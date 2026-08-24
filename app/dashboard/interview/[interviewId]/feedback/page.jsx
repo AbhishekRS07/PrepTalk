@@ -17,6 +17,7 @@ import {
   Copy,
   Check,
   Eye,
+  MessageSquareOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -75,7 +76,7 @@ function ScoreRing({ score }) {
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="text-4xl font-black"
+          className="text-4xl font-black font-mono"
         >
           {score}
         </motion.span>
@@ -148,7 +149,7 @@ function FeedbackItem({ item, index }) {
 
                   {/* Your answer */}
                   <div className="rounded-xl border border-border bg-secondary/40 p-4">
-                    <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Your Answer</p>
+                    <p className="text-xs font-semibold font-mono text-muted-foreground mb-1.5 uppercase tracking-wide">Your Answer</p>
                     <p className="text-sm leading-relaxed">{item.userAns || "No answer recorded."}</p>
                   </div>
                 </>
@@ -156,14 +157,14 @@ function FeedbackItem({ item, index }) {
 
               {item.skipped && (
                 <div className="rounded-xl border border-dashed border-muted-foreground/30 bg-secondary/20 p-4">
-                  <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">Not Answered</p>
+                  <p className="text-xs font-semibold font-mono text-muted-foreground mb-1 uppercase tracking-wide">Not Answered</p>
                   <p className="text-sm text-muted-foreground">You skipped this question. Review the model answer below to prepare for next time.</p>
                 </div>
               )}
 
               {/* Model answer */}
               <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 p-4">
-                <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1.5 uppercase tracking-wide">Model Answer</p>
+                <p className="text-xs font-semibold font-mono text-emerald-700 dark:text-emerald-400 mb-1.5 uppercase tracking-wide">Model Answer</p>
                 <p className="text-sm leading-relaxed text-emerald-900 dark:text-emerald-100">{item.correctAns}</p>
               </div>
 
@@ -172,7 +173,7 @@ function FeedbackItem({ item, index }) {
                 <div className="rounded-xl border border-primary/20 bg-accent p-4">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <MessageSquare className="h-3.5 w-3.5 text-primary" />
-                    <p className="text-xs font-semibold text-primary uppercase tracking-wide">AI Feedback</p>
+                    <p className="text-xs font-semibold font-mono text-primary uppercase tracking-wide">AI Feedback</p>
                   </div>
                   <p className="text-sm leading-relaxed text-accent-foreground">{item.feedback}</p>
                 </div>
@@ -207,7 +208,7 @@ function AttentionCard({ score, violations }) {
     >
       <div className="flex items-center gap-2 mb-5">
         <Eye className="h-4 w-4 text-primary" />
-        <span className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
+        <span className="text-sm font-semibold font-mono text-muted-foreground uppercase tracking-widest">
           Attention Score
         </span>
       </div>
@@ -217,7 +218,7 @@ function AttentionCard({ score, violations }) {
           initial={{ opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="text-4xl font-black leading-none"
+          className="text-4xl font-black font-mono leading-none"
         >
           {score}%
         </motion.span>
@@ -350,7 +351,9 @@ const Feedback = () => {
   if (feedbackList.length === 0) {
     return (
       <div className="max-w-2xl mx-auto py-20 text-center px-4">
-        <div className="text-5xl mb-4">🤔</div>
+        <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+          <MessageSquareOff className="h-8 w-8 text-primary" />
+        </div>
         <h2 className="text-2xl font-bold mb-2">No feedback found</h2>
         <p className="text-muted-foreground mb-8 text-sm">
           It looks like no answers were recorded for this interview. Try starting the interview again.
@@ -384,12 +387,18 @@ const Feedback = () => {
         <div className="text-center sm:text-left">
           <div className="flex items-center gap-2 justify-center sm:justify-start mb-2">
             <Trophy className="h-5 w-5 text-amber-500" />
-            <span className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
+            <span className="text-sm font-semibold font-mono text-muted-foreground uppercase tracking-widest">
               Interview Complete
             </span>
           </div>
           <h1 className="text-3xl font-black mb-1">
-            {parseFloat(averageRating) >= 7 ? "Great job!" : "Keep it up!"}
+            {(() => {
+              const r = parseFloat(averageRating);
+              if (r >= 8.5) return "Outstanding!";
+              if (r >= 7) return "Nice work!";
+              if (r >= 5) return "Solid effort.";
+              return "Keep at it.";
+            })()}
           </h1>
           <p className={cn("text-lg font-bold mb-3", color)}>{label}</p>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
@@ -410,7 +419,7 @@ const Feedback = () => {
 
       {/* Per-question breakdown */}
       <div>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-4">
+        <h2 className="text-sm font-semibold font-mono text-muted-foreground uppercase tracking-widest mb-4">
           Question Breakdown
         </h2>
         <div className="space-y-3">

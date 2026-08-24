@@ -10,19 +10,19 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const bandColor = (band) => {
-  if (!band) return "#6b7280";
-  const b = (band || "").toLowerCase();
-  if (b === "excellent") return "#10b981";
-  if (b === "good") return "#3b82f6";
-  if (b === "average") return "#f59e0b";
-  return "#ef4444";
+const bandStyles = (band) => {
+  if (!band) return { text: "text-muted-foreground", border: "border-border" };
+  const b = band.toLowerCase();
+  if (b === "excellent") return { text: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-500" };
+  if (b === "good")      return { text: "text-blue-600 dark:text-blue-400",       border: "border-blue-500" };
+  if (b === "average")   return { text: "text-amber-600 dark:text-amber-400",     border: "border-amber-500" };
+  return { text: "text-red-600 dark:text-red-400", border: "border-red-500" };
 };
 
-const ratingBadgeColor = (r) => {
-  if (r === "Strong") return "#10b981";
-  if (r === "Average") return "#f59e0b";
-  return "#ef4444";
+const ratingBadgeClasses = (r) => {
+  if (r === "Strong")  return "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40";
+  if (r === "Average") return "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40";
+  return "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40";
 };
 
 export default function LiveInterviewDetailPage() {
@@ -59,7 +59,7 @@ export default function LiveInterviewDetailPage() {
   }
 
   const { debrief, messages = [], role, experience, createdAt } = session;
-  const color = bandColor(debrief?.overallBand);
+  const band = bandStyles(debrief?.overallBand);
   const exchanges = messages.filter((m) => m.role === "user").length;
 
   return (
@@ -76,8 +76,8 @@ export default function LiveInterviewDetailPage() {
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-          <Mic className="h-5 w-5 text-emerald-500" />
+        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          <Mic className="h-5 w-5 text-primary" />
         </div>
         <div>
           <h1 className="text-xl font-black tracking-tight">{role}</h1>
@@ -89,12 +89,11 @@ export default function LiveInterviewDetailPage() {
         <>
           {/* Score card */}
           <div className="bg-card border border-border rounded-2xl p-8 flex flex-col items-center text-center gap-3">
-            <div className="h-20 w-20 rounded-full border-4 flex items-center justify-center"
-              style={{ borderColor: color }}>
-              <span className="text-2xl font-black" style={{ color }}>{debrief.score}</span>
+            <div className={cn("h-20 w-20 rounded-full border-4 flex items-center justify-center", band.border)}>
+              <span className={cn("text-2xl font-black font-mono", band.text)}>{debrief.score}</span>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Live Interview Result</p>
+              <p className="text-xs font-semibold font-mono uppercase tracking-widest text-muted-foreground mb-1">Live Interview Result</p>
               <h2 className="text-2xl font-black tracking-tight">{debrief.overallBand}</h2>
               <p className="text-sm text-muted-foreground mt-2 max-w-sm leading-relaxed">{debrief.summary}</p>
             </div>
@@ -153,8 +152,7 @@ export default function LiveInterviewDetailPage() {
                         <span className="text-sm">{t.topic}</span>
                         <div className="flex items-center gap-3">
                           <span className="text-xs text-muted-foreground hidden sm:block">{t.note}</span>
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                            style={{ color: ratingBadgeColor(t.rating), background: ratingBadgeColor(t.rating) + "18" }}>
+                          <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", ratingBadgeClasses(t.rating))}>
                             {t.rating}
                           </span>
                         </div>

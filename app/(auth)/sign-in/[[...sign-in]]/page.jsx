@@ -3,10 +3,32 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoaderCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+function FloatingScoreCard({ label, score, className, delay = 0 }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24, scale: 0.92 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
+      className={cn(
+        "absolute bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-3 shadow-xl",
+        className
+      )}
+    >
+      <p className="text-white/70 text-xs font-medium font-mono mb-1">{label}</p>
+      <p className="text-white text-2xl font-black font-mono leading-none">
+        {score}
+        <span className="text-sm font-medium text-white/60">/10</span>
+      </p>
+    </motion.div>
+  );
+}
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
@@ -49,8 +71,13 @@ export default function SignInPage() {
     <div className="min-h-screen bg-background flex">
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 gradient-primary relative overflow-hidden flex-col justify-between p-12">
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-white/10 rounded-full" />
+        {/* Floating score cards — a proof of the product, not abstract decoration */}
+        <div className="absolute inset-0 pointer-events-none">
+          <FloatingScoreCard label="System Design" score={8} className="top-24 right-16 rotate-[-6deg]" delay={0.15} />
+          <FloatingScoreCard label="Behavioral" score={9} className="top-1/2 -translate-y-1/2 right-32 rotate-[4deg]" delay={0.3} />
+          <FloatingScoreCard label="DSA — Arrays" score={7} className="bottom-28 right-10 rotate-[-3deg]" delay={0.45} />
+        </div>
+
         <Link href="/" className="flex items-center gap-2 relative z-10">
           <Image src="/logo.svg" width={36} height={36} alt="PrepTalk" />
           <span className="font-bold text-xl text-white">PrepTalk</span>
@@ -60,7 +87,7 @@ export default function SignInPage() {
             Practice makes<br />perfect interviews.
           </h2>
           <p className="text-white/80 text-lg leading-relaxed">
-            AI-powered mock interviews tailored to your role. Get real feedback, improve faster.
+            Mock interviews tailored to your role, with feedback on every answer.
           </p>
         </div>
         <p className="text-white/50 text-sm relative z-10">© {new Date().getFullYear()} PrepTalk</p>

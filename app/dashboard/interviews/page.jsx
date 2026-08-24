@@ -12,7 +12,7 @@ import {
   Clock, Building2, Briefcase, ChevronDown, ChevronUp,
   ArrowRight, Sparkles, AlertTriangle, BookOpen,
   Mic, Brain, Code2, FileText, TrendingUp, MapPin,
-  Trophy, Flame, RotateCcw,
+  Trophy, Flame, RotateCcw, LoaderCircle,
 } from "lucide-react";
 
 // ── Constants ────────────────────────────────────────────────────
@@ -231,7 +231,7 @@ function AddInterviewModal({ open, onClose, onAdd }) {
                     Cancel
                   </Button>
                   <Button type="submit" className="flex-1 gap-1.5" disabled={loading || !company || !role || !date}>
-                    {loading ? <span className="animate-spin">⏳</span> : <Plus className="h-4 w-4" />}
+                    {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                     Add Interview
                   </Button>
                 </div>
@@ -317,7 +317,9 @@ function InterviewCard({ interview, onUpdate, onDelete }) {
               </span>
               <CountdownBadge days={daysUntil} />
               {interview.status === "done" && (
-                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">✓ Done</span>
+                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Done
+                </span>
               )}
               {interview.status === "cancelled" && (
                 <span className="text-xs font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">Cancelled</span>
@@ -649,14 +651,19 @@ export default function InterviewsPage() {
       <AddInterviewModal open={modalOpen} onClose={() => setModalOpen(false)} onAdd={handleAdd} />
 
       {/* Page header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">Interview Tracker</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {upcoming.length > 0
-              ? `${upcoming.length} upcoming · auto daily prep plan`
-              : "Add an interview to get your prep plan"}
-          </p>
+      <div className="flex items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+            <CalendarDays className="h-5 w-5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-black tracking-tight">Interview Tracker</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {upcoming.length > 0
+                ? `${upcoming.length} upcoming · auto daily prep plan`
+                : "Add an interview to get your prep plan"}
+            </p>
+          </div>
         </div>
         <Button onClick={() => setModalOpen(true)} className="gap-2 shrink-0">
           <Plus className="h-4 w-4" /> Add
@@ -668,12 +675,11 @@ export default function InterviewsPage() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-2xl mb-6 p-px"
-          style={{ background: "linear-gradient(135deg, #8b5cf640 0%, #10b98130 100%)" }}
+          className="relative overflow-hidden rounded-2xl mb-6 p-px bg-gradient-to-br from-primary/25 to-emerald-500/20"
         >
           <div className="rounded-2xl bg-card/95 p-5">
             <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-primary/8 blur-2xl pointer-events-none" />
-            <p className="text-xs font-bold text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <p className="text-xs font-bold font-mono text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5" /> Next up
             </p>
             <div className="flex items-end justify-between gap-4">
@@ -714,7 +720,7 @@ export default function InterviewsPage() {
 
           {(past.length > 0 || done.length > 0 || cancelled.length > 0) && (
             <div className="space-y-3 pt-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Past & Completed</p>
+              <p className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wider">Past & Completed</p>
               {[...past, ...done, ...cancelled].map((iv) => (
                 <InterviewCard key={iv.id} interview={iv} onUpdate={handleUpdate} onDelete={handleDelete} />
               ))}

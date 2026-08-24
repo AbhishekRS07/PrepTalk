@@ -60,7 +60,7 @@ function ScoreRing({ score }) {
       </svg>
       <div className="flex flex-col items-center z-10">
         <motion.span initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }} className="text-3xl font-black">
+          transition={{ duration: 0.5, delay: 0.5 }} className="text-3xl font-black font-mono">
           {score}
         </motion.span>
         <span className="text-xs text-muted-foreground">out of 10</span>
@@ -204,7 +204,7 @@ export default function SharePage() {
           <div className="text-center sm:text-left">
             <div className="flex items-center gap-2 justify-center sm:justify-start mb-2">
               <Trophy className="h-5 w-5 text-amber-500" />
-              <span className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
+              <span className="text-sm font-semibold font-mono text-muted-foreground uppercase tracking-widest">
                 Interview Result
               </span>
             </div>
@@ -219,7 +219,7 @@ export default function SharePage() {
 
         {/* Questions */}
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-4">
+          <h2 className="text-sm font-semibold font-mono text-muted-foreground uppercase tracking-widest mb-4">
             Question Breakdown
           </h2>
           <div className="space-y-3">

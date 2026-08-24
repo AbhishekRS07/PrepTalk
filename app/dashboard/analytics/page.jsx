@@ -27,7 +27,7 @@ const ratingColor = (r) => {
 };
 
 const TYPE_META = {
-  mock:   { label: "Mock",   color: "#8b5cf6", bg: "#8b5cf620" },
+  mock:   { label: "Mock",   color: "#3b82f6", bg: "#3b82f620" },
   live:   { label: "Live",   color: "#10b981", bg: "#10b98120" },
   resume: { label: "Resume", color: "#f59e0b", bg: "#f59e0b20" },
 };
@@ -68,7 +68,7 @@ function StatCard({ icon: Icon, label, value, sub, color, index }) {
           <Icon className="h-5 w-5" style={{ color }} />
         </div>
       </div>
-      <p className="text-2xl font-black tracking-tight mb-0.5">{value}</p>
+      <p className="text-2xl font-black font-mono tracking-tight mb-0.5">{value}</p>
       <p className="text-sm font-medium">{label}</p>
       {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
     </motion.div>
@@ -155,7 +155,7 @@ export default function AnalyticsPage() {
       label: "Interviews completed",
       value: data.totalInterviews,
       sub: "across all formats",
-      color: "#8b5cf6",
+      color: "hsl(var(--primary))",
     },
     {
       icon: CheckCircle2,
@@ -221,7 +221,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t.label}</p>
-                  <p className="text-xl font-black" style={{ color: t.color }}>{t.avg}<span className="text-xs font-normal text-muted-foreground ml-0.5">/10</span></p>
+                  <p className="text-xl font-black font-mono" style={{ color: t.color }}>{t.avg}<span className="text-xs font-normal text-muted-foreground ml-0.5">/10</span></p>
                   <p className="text-xs text-muted-foreground">{t.count} session{t.count !== 1 ? "s" : ""}</p>
                 </div>
               </div>

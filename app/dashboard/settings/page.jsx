@@ -84,11 +84,15 @@ export default function SettingsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="flex items-center gap-3 mb-1">
-          <Settings className="h-5 w-5 text-primary" />
-          <h1 className="text-2xl font-black tracking-tight">Settings</h1>
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+            <Settings className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight">Settings</h1>
+            <p className="text-sm text-muted-foreground">Manage your account preferences.</p>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">Manage your account preferences.</p>
       </motion.div>
 
       {/* Notifications card */}
@@ -98,7 +102,7 @@ export default function SettingsPage() {
         transition={{ delay: 0.05 }}
         className="bg-card border border-border rounded-2xl px-6 py-1"
       >
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider py-4 border-b border-border/50">
+        <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider py-4 border-b border-border/50">
           Notifications
         </p>
 

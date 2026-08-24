@@ -53,6 +53,7 @@ const PROFILES = [
   "Node.js Developer","Python Developer","Java Developer","DevOps Engineer",
   "Data Scientist","Machine Learning Engineer","Android Developer","iOS Developer",
   "QA Engineer","System Design","Product Manager",
+  "HR Generalist","Technical Recruiter","HR Business Partner",
 ];
 
 const EXPERIENCE_LEVELS = [
@@ -82,7 +83,7 @@ const LANGUAGES = [
 const difficultyColor = {
   Easy:   "text-emerald-600 bg-emerald-500/10 border-emerald-500/20 dark:text-emerald-400",
   Medium: "text-amber-600 bg-amber-500/10 border-amber-500/20 dark:text-amber-400",
-  Hard:   "text-red-500 bg-red-500/10 border-red-500/20",
+  Hard:   "text-red-600 bg-red-500/10 border-red-500/20 dark:text-red-400",
 };
 
 // ── Wandbox API ───────────────────────────────────────────────────
@@ -254,7 +255,7 @@ Respond helpfully in 2-4 sentences. Give hints, explain concepts, point out bugs
           </div>
           {problem.examples?.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Examples</p>
+              <p className="text-xs font-semibold font-mono uppercase tracking-wide text-muted-foreground">Examples</p>
               {problem.examples.map((ex, i) => (
                 <div key={i} className="bg-secondary/50 rounded-xl p-3 font-mono text-xs space-y-1">
                   <p><span className="text-muted-foreground">Input:</span> {ex.input}</p>
@@ -266,7 +267,7 @@ Respond helpfully in 2-4 sentences. Give hints, explain concepts, point out bugs
           )}
           {problem.constraints?.length > 0 && (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Constraints</p>
+              <p className="text-xs font-semibold font-mono uppercase tracking-wide text-muted-foreground mb-1.5">Constraints</p>
               <ul className="space-y-1">
                 {problem.constraints.map((c, i) => (
                   <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
@@ -464,7 +465,7 @@ function DSAQuestionCard({ problem, index, onSolve, isSolved }) {
               <p className="text-sm text-muted-foreground leading-relaxed">{problem.description}</p>
               {problem.examples?.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Example</p>
+                  <p className="text-xs font-semibold font-mono uppercase tracking-wide text-muted-foreground">Example</p>
                   <div className="bg-secondary/50 rounded-xl p-3 font-mono text-xs space-y-1">
                     <p><span className="text-muted-foreground">Input:</span> {problem.examples[0].input}</p>
                     <p><span className="text-muted-foreground">Output:</span> {problem.examples[0].output}</p>
@@ -608,7 +609,7 @@ Each element must have EXACTLY these keys:
         {/* Topic multi-select chips */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <label className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide">
               Topics
             </label>
             {topics.length > 0 && (
@@ -641,7 +642,7 @@ Each element must have EXACTLY these keys:
 
         {/* Experience level */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Experience Level</label>
+          <label className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide">Experience Level</label>
           <div className="flex gap-2">
             {EXPERIENCE_LEVELS.map((lvl) => (
               <button key={lvl.value} onClick={() => { setExperience(lvl.value); setGenerated(false); setProblems([]); }}
@@ -798,7 +799,7 @@ function QACard({ item, index, isBookmarked, onToggleBookmark }) {
             exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: "easeInOut" }}
             className="overflow-hidden">
             <div className="px-5 pb-5 pt-1 border-t border-border">
-              <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">Answer</p>
+              <p className="text-xs font-semibold font-mono text-primary uppercase tracking-wide mb-2">Answer</p>
               <p className="text-sm text-muted-foreground leading-relaxed">{item.answer}</p>
             </div>
           </motion.div>
@@ -864,7 +865,7 @@ function InterviewQATab() {
         <div className="absolute top-0 right-0 w-48 h-48 bg-primary/4 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Job Profile</label>
+            <label className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide">Job Profile</label>
             <select value={profile} onChange={(e) => { setProfile(e.target.value); setGenerated(false); setQuestions([]); }}
               className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
               <option value="">Select a profile…</option>
@@ -872,7 +873,7 @@ function InterviewQATab() {
             </select>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Experience Level</label>
+            <label className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide">Experience Level</label>
             <div className="flex gap-2">
               {EXPERIENCE_LEVELS.map((lvl) => (
                 <button key={lvl.value} onClick={() => { setExperience(lvl.value); setGenerated(false); setQuestions([]); }}
@@ -900,7 +901,7 @@ function InterviewQATab() {
           <motion.div key={page} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div variants={fadeUp} initial="hidden" animate="visible"
               className="flex items-center justify-between mb-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide">
                 {profile} · {EXPERIENCE_LEVELS.find(l => l.value === experience)?.label} · Set {page + 1}
               </p>
               <span className="text-xs text-muted-foreground">{questions.length} questions</span>
@@ -991,7 +992,7 @@ function BookmarkCard({ item, index, onRemove }) {
             exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: "easeInOut" }}
             className="overflow-hidden">
             <div className="px-5 pb-5 pt-1 border-t border-border">
-              <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">Answer</p>
+              <p className="text-xs font-semibold font-mono text-primary uppercase tracking-wide mb-2">Answer</p>
               <p className="text-sm text-muted-foreground leading-relaxed">{item.answer}</p>
             </div>
           </motion.div>
@@ -1049,7 +1050,7 @@ function TheoryBookmarks({ isActive }) {
 
   return (
     <div className="space-y-5">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+      <p className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide">
         {items.length} saved question{items.length !== 1 ? "s" : ""}
       </p>
       <motion.div variants={listContainer} initial="hidden" animate="visible" className="space-y-3">
@@ -1174,7 +1175,7 @@ function CodingBookmarks() {
 
   return (
     <div className="space-y-5">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+      <p className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide">
         {items.length} saved challenge{items.length !== 1 ? "s" : ""}
       </p>
       <div className="space-y-3">

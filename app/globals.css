@@ -3,66 +3,75 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * Theme unified 2026-08-24 — the whole app now shares the landing page's
+   * green/ink identity instead of two coincidentally-different palettes
+   * (the app was violet, the landing page was green). These HSL values are
+   * direct conversions of the .pt-landing hex tokens below, so both systems
+   * describe the same colors from one decision.
+   */
   :root {
-    --background: 0 0% 99%;
-    --foreground: 224 15% 10%;
+    /* Softened 2026-08-24 for eye comfort — less near-black text, less neon
+       primary, a touch of warmth in the neutrals instead of stark white/black. */
+    --background: 100 18% 96%;
+    --foreground: 155 12% 16%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 224 15% 10%;
+    --card: 90 15% 99%;
+    --card-foreground: 155 12% 16%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 15% 10%;
+    --popover: 90 15% 99%;
+    --popover-foreground: 155 12% 16%;
 
-    --primary: 245 75% 55%;
+    --primary: 153 62% 36%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 15% 96%;
-    --secondary-foreground: 224 15% 20%;
+    --secondary: 100 15% 93%;
+    --secondary-foreground: 155 10% 24%;
 
-    --muted: 220 15% 94%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 100 15% 93%;
+    --muted-foreground: 150 8% 46%;
 
-    --accent: 245 75% 96%;
-    --accent-foreground: 245 75% 40%;
+    --accent: 153 35% 92%;
+    --accent-foreground: 153 55% 28%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 90%;
-    --input: 220 15% 90%;
-    --ring: 245 75% 55%;
+    --border: 100 15% 87%;
+    --input: 100 15% 87%;
+    --ring: 153 62% 36%;
 
     --radius: 0.75rem;
   }
 
   .dark {
-    --background: 224 20% 8%;
-    --foreground: 220 15% 95%;
+    --background: 160 13% 4.5%;
+    --foreground: 68 17% 92%;
 
-    --card: 224 20% 11%;
-    --card-foreground: 220 15% 95%;
+    --card: 165 10% 7.8%;
+    --card-foreground: 68 17% 92%;
 
-    --popover: 224 20% 11%;
-    --popover-foreground: 220 15% 95%;
+    --popover: 165 10% 7.8%;
+    --popover-foreground: 68 17% 92%;
 
-    --primary: 245 75% 65%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 153 88% 58.6%;
+    --primary-foreground: 160 13% 4.5%;
 
-    --secondary: 224 20% 15%;
-    --secondary-foreground: 220 15% 80%;
+    --secondary: 165 10% 12%;
+    --secondary-foreground: 68 10% 85%;
 
-    --muted: 224 20% 15%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 165 10% 12%;
+    --muted-foreground: 138 4.5% 56.5%;
 
-    --accent: 245 40% 18%;
-    --accent-foreground: 245 75% 75%;
+    --accent: 153 40% 15%;
+    --accent-foreground: 153 70% 70%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 224 20% 18%;
-    --input: 224 20% 18%;
-    --ring: 245 75% 65%;
+    --border: 197 9% 15%;
+    --input: 197 9% 15%;
+    --ring: 153 88% 58.6%;
   }
 }
 
@@ -77,8 +86,14 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-inter), system-ui, sans-serif;
+    font-family: var(--font-plex-sans), system-ui, sans-serif;
     transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Headlines and labels read as terminal/data output everywhere in the app,
+     matching the landing page's voice — body copy stays on Plex Sans. */
+  h1, h2, h3, h4 {
+    font-family: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
   }
 
   /* Smooth theme transitions */
@@ -98,11 +113,11 @@
 
 @layer utilities {
   .gradient-primary {
-    @apply bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600;
+    @apply bg-gradient-to-br from-[hsl(var(--primary))] via-emerald-600 to-teal-800;
   }
 
   .gradient-text {
-    @apply bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary to-emerald-700 bg-clip-text text-transparent;
   }
 
   .glass {
@@ -134,5 +149,54 @@
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(28px); }
     to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Landing page: always-dark identity ──
+     Now the SAME palette as .dark above (that's the point of the 2026-08-24
+     unification) — kept as its own literal hex block because the landing
+     page stays dark regardless of the light/dark toggle, while .dark only
+     applies when the toggle is on. Keep these two in sync if the palette changes. */
+  .pt-landing {
+    --pt-ink: #0a0d0c;
+    --pt-panel: #121615;
+    --pt-line: #23282a;
+    --pt-chalk: #edeee7;
+    --pt-mist: #8b958e;
+    --pt-signal: #39f2a0;
+    --pt-ember: #ff7a4d;
+  }
+
+  .pt-mono {
+    font-family: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+  }
+
+  .pt-sans {
+    font-family: var(--font-plex-sans), system-ui, sans-serif;
+  }
+
+  .pt-wave-bar {
+    animation: pt-wave 1.1s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  @keyframes pt-wave {
+    0%, 100% { transform: scaleY(0.25); }
+    50%      { transform: scaleY(1); }
+  }
+
+  .pt-cursor-blink {
+    animation: pt-blink 1s step-end infinite;
+  }
+
+  @keyframes pt-blink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pt-wave-bar,
+    .pt-cursor-blink {
+      animation: none;
+    }
   }
 }

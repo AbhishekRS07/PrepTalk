@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { fadeUp } from "@/lib/animations";
 
 const steps = [
@@ -19,9 +18,6 @@ const steps = [
     title: "Mock Interview",
     description:
       "Enter the job role, tech stack, and your years of experience. The AI generates tailored questions and you answer by voice or text — one question at a time.",
-    color: "text-violet-500",
-    bg: "bg-violet-500/10",
-    border: "border-violet-500/20",
     details: [
       "Specify the exact job title and paste the job description for hyper-relevant questions",
       "Record answers by microphone — transcribed in real time — or type them",
@@ -35,9 +31,6 @@ const steps = [
     title: "Live AI Interviewer",
     description:
       "Have a real back-and-forth conversation with an AI that behaves like a senior interviewer — asking one question at a time, probing vague answers, and following up on weak spots.",
-    color: "text-emerald-500",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
     details: [
       "Questions are read aloud — answer by speaking (mic button) or typing",
       "The AI adapts based on your answers — no fixed script",
@@ -51,9 +44,6 @@ const steps = [
     title: "Resume-based Interview",
     description:
       "Upload your resume as a PDF and the AI generates questions grounded in your actual experience — your projects, companies, skills, and timelines.",
-    color: "text-amber-500",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
     details: [
       "Drag and drop your PDF resume — the AI reads it and extracts your background",
       "Optionally specify a target role; otherwise the AI infers it from your resume",
@@ -67,9 +57,6 @@ const steps = [
     title: "Progress Analytics",
     description:
       "Every session — mock, live, or resume-based — feeds into your analytics dashboard where you can track improvement over time across roles and formats.",
-    color: "text-blue-500",
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/20",
     details: [
       "Overall avg score, total sessions, and improvement % across all formats",
       "Rating trend chart with dots color-coded by interview type",
@@ -82,10 +69,7 @@ const steps = [
     icon: BookOpen,
     title: "Question Bank",
     description:
-      "Browse AI-generated interview Q&A and DSA problems outside of a full interview session — great for quick warm-ups or targeted practice.",
-    color: "text-orange-500",
-    bg: "bg-orange-500/10",
-    border: "border-orange-500/20",
+      "Browse AI-generated interview Q&A by role — technical roles get DSA problems too — outside of a full interview session. Great for quick warm-ups or targeted practice.",
     details: [
       "Pick any job profile and get 10 fresh interview Q&A instantly",
       "Select a DSA topic and experience level for targeted problems",
@@ -99,9 +83,6 @@ const steps = [
     title: "AI Learning Roadmap",
     description:
       "Not sure where to start? Generate a personalized preparation roadmap in seconds. Tell PrepTalk your current role and target job — the AI builds a step-by-step plan calibrated to your exact skill gap.",
-    color: "text-pink-500",
-    bg: "bg-pink-500/10",
-    border: "border-pink-500/20",
     details: [
       "Select your current role, years of experience, company, and target position",
       "AI generates 5–10 milestones across multiple phases — no generic templates",
@@ -116,9 +97,6 @@ const steps = [
     title: "Interview Tracker",
     description:
       "Log every upcoming and completed interview in one place. PrepTalk auto-generates a personalized day-by-day prep plan calibrated to your interview date.",
-    color: "text-cyan-500",
-    bg: "bg-cyan-500/10",
-    border: "border-cyan-500/20",
     details: [
       "Add interviews with company, role, round type, and date — or mark existing ones as upcoming",
       "Get a daily schedule of theory topics, DSA problems, and coding challenges leading up to the interview",
@@ -133,9 +111,6 @@ const steps = [
     title: "Coding Challenges",
     description:
       "Practice real-world business logic problems — not just algorithmic puzzles. AI generates scenario-based coding challenges for the category and experience level you choose.",
-    color: "text-yellow-500",
-    bg: "bg-yellow-500/10",
-    border: "border-yellow-500/20",
     details: [
       "Choose a category (Full Stack, DSA, System Design, etc.) and your experience level",
       "AI generates a fresh challenge each time — with description, requirements, and function signature",
@@ -150,9 +125,6 @@ const steps = [
     title: "Resume ATS Analyzer",
     description:
       "Upload your resume and get a detailed ATS score, keyword gap analysis, and a prioritized action plan — with an optional job description match mode.",
-    color: "text-rose-500",
-    bg: "bg-rose-500/10",
-    border: "border-rose-500/20",
     details: [
       "Drag and drop your PDF resume or use the one already saved to your profile",
       "Get three scores: Overall, ATS Compatibility, and JD Relevance (if JD is pasted)",
@@ -167,9 +139,6 @@ const steps = [
     title: "Behavioral Coach",
     description:
       "Build confidence for behavioral rounds with AI-powered STAR-method coaching tailored to your role and experience level.",
-    color: "text-indigo-500",
-    bg: "bg-indigo-500/10",
-    border: "border-indigo-500/20",
     details: [
       "Practice the most common behavioral questions: leadership, conflict, ownership, collaboration",
       "AI evaluates your answer against the STAR framework and rates each component",
@@ -249,8 +218,29 @@ export default function HowItWorksPage() {
         </div>
         <h1 className="text-4xl font-black tracking-tight">How PrepTalk Works</h1>
         <p className="text-muted-foreground text-base max-w-xl mx-auto leading-relaxed">
-          Three interview formats, a question bank with coding challenges, an Interview Tracker, a Resume ATS Analyzer, a Behavioral Coach, and an AI roadmap — everything you need to go from where you are to where you want to be.
+          Ten tools that take you from your first mock question to a scheduled,
+          day-by-day prep plan — whether you&apos;re prepping for a technical round
+          or an HR interview. Here&apos;s exactly how each one works.
         </p>
+      </motion.div>
+
+      {/* Jump to — this is a long reference page, let people skip to the tool they came for */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center"
+      >
+        {steps.map((step) => (
+          <a
+            key={step.number}
+            href={`#step-${step.number}`}
+            className="shrink-0 flex items-center gap-1.5 text-xs font-mono font-medium px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors whitespace-nowrap"
+          >
+            <step.icon className="h-3 w-3" />
+            {step.title}
+          </a>
+        ))}
       </motion.div>
 
       {/* Steps */}
@@ -260,35 +250,32 @@ export default function HowItWorksPage() {
           return (
             <motion.div
               key={step.number}
+              id={`step-${step.number}`}
               custom={i}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-60px" }}
               variants={fadeUp}
-              className={cn(
-                "border rounded-2xl p-7 flex flex-col sm:flex-row gap-6",
-                step.border,
-                step.bg
-              )}
+              className="border border-border bg-card rounded-2xl p-7 flex flex-col sm:flex-row gap-6 scroll-mt-20"
             >
               {/* Left */}
               <div className="flex sm:flex-col items-center sm:items-start gap-4 sm:gap-3 shrink-0">
                 <span className="text-5xl font-black text-muted-foreground/20 leading-none">
                   {step.number}
                 </span>
-                <div className={cn("p-2.5 rounded-xl border", step.bg, step.border)}>
-                  <Icon className={cn("h-5 w-5", step.color)} />
+                <div className="p-2.5 rounded-xl border border-primary/20 bg-primary/10">
+                  <Icon className="h-5 w-5 text-primary" />
                 </div>
               </div>
 
               {/* Right */}
               <div className="flex-1 space-y-3">
-                <h2 className={cn("text-xl font-bold", step.color)}>{step.title}</h2>
+                <h2 className="text-xl font-bold">{step.title}</h2>
                 <p className="text-muted-foreground text-sm leading-relaxed">{step.description}</p>
                 <ul className="space-y-1.5">
                   {step.details.map((d) => (
                     <li key={d} className="flex items-start gap-2 text-sm">
-                      <ArrowRight className={cn("h-4 w-4 shrink-0 mt-0.5", step.color)} />
+                      <ArrowRight className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
                       <span>{d}</span>
                     </li>
                   ))}

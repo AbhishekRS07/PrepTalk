@@ -93,19 +93,12 @@ const ROLE_OPTIONS = [
   "QA / Test Engineer",
   "Security Engineer",
   "Embedded / Systems Engineer",
+  "Product Manager",
+  "HR Generalist",
+  "Technical Recruiter",
   "Career Switcher (non-tech background)",
   "Other",
 ];
-
-const EXPERIENCE_OPTIONS = [
-  "Less than 1 year",
-  "1–2 years",
-  2,
-  "2–3 years",
-  "3–5 years",
-  "5–8 years",
-  "8+ years",
-].filter((x) => typeof x === "string"); // remove accidental numbers
 
 const EXP_OPTIONS = [
   "Less than 1 year",
@@ -144,6 +137,12 @@ const TARGET_ROLE_OPTIONS = [
   "Engineering Manager",
   "QA / Automation Engineer",
   "Security Engineer",
+  "Product Manager",
+  "Senior Product Manager",
+  "HR Generalist",
+  "HR Business Partner",
+  "Technical Recruiter",
+  "Talent Acquisition Manager",
 ];
 
 // ── Styled Select ─────────────────────────────────────────────────
@@ -594,7 +593,7 @@ function MilestoneItem({ milestone, isCompleted, isCurrent, isLast, phaseComplet
 
                     {/* Tasks */}
                     <div className="space-y-2">
-                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">What to do</p>
+                      <p className="text-xs font-bold font-mono uppercase tracking-wider text-muted-foreground">What to do</p>
                       <ul className="space-y-2">
                         {milestone.tasks?.map((task, ti) => (
                           <li key={ti} className="flex items-start gap-2.5 text-sm">
@@ -641,8 +640,8 @@ function MilestoneItem({ milestone, isCompleted, isCurrent, isLast, phaseComplet
                     </div>
 
                     {milestone.appAction?.hint && (
-                      <p className="text-xs text-muted-foreground/70 italic leading-relaxed">
-                        💡 {milestone.appAction.hint}
+                      <p className="text-xs text-muted-foreground/70 italic leading-relaxed flex items-start gap-1.5">
+                        <Lightbulb className="h-3.5 w-3.5 shrink-0 mt-0.5" /> {milestone.appAction.hint}
                       </p>
                     )}
                   </div>
@@ -698,9 +697,9 @@ function PhaseSection({ phase, completedIds, currentMilestoneId, onToggle, index
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 300, damping: 18 }}
-                className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full"
+                className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full inline-flex items-center gap-1"
               >
-                ✓ Phase complete
+                <Check className="h-2.5 w-2.5" strokeWidth={3} /> Phase complete
               </motion.span>
             )}
           </div>
@@ -756,13 +755,13 @@ function ProgressRing({ pct }) {
         />
         <defs>
           <linearGradient id="ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#8b5cf6" />
+            <stop offset="0%" stopColor="hsl(var(--primary))" />
             <stop offset="100%" stopColor="#10b981" />
           </linearGradient>
         </defs>
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-base font-black tabular-nums">{pct}%</span>
+        <span className="text-base font-black font-mono tabular-nums">{pct}%</span>
       </div>
     </div>
   );
@@ -784,12 +783,11 @@ function RoadmapView({ data, completedIds, onToggle, onReset }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative overflow-hidden rounded-2xl mb-8 p-px"
-        style={{ background: "linear-gradient(135deg, #8b5cf640 0%, #10b98130 50%, #8b5cf620 100%)" }}
+        className="relative overflow-hidden rounded-2xl mb-8 p-px bg-gradient-to-br from-primary/25 via-emerald-500/20 to-primary/12"
       >
         <div className="rounded-2xl bg-card/95 backdrop-blur p-6">
           {/* Subtle glow blob */}
-          <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
 
           <div className="flex items-center gap-5 relative">
@@ -797,7 +795,7 @@ function RoadmapView({ data, completedIds, onToggle, onReset }) {
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 mb-1">
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-xs font-bold font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                   <Target className="h-3 w-3" /> TARGET ROLE
                 </span>
               </div>
@@ -807,11 +805,10 @@ function RoadmapView({ data, completedIds, onToggle, onReset }) {
               <div className="flex items-center gap-3 mt-3">
                 <div className="flex-1 h-2 bg-border/50 rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-emerald-500"
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-500 shadow-[0_0_8px_hsl(var(--primary)/0.5)]"
                     initial={{ width: 0 }}
                     animate={{ width: `${pct}%` }}
                     transition={{ duration: 1, ease: "easeOut" }}
-                    style={{ boxShadow: "0 0 8px rgba(139,92,246,0.5)" }}
                   />
                 </div>
                 <span className="text-xs font-bold tabular-nums shrink-0 text-emerald-400">{done}<span className="text-muted-foreground font-normal">/{total}</span></span>
@@ -837,10 +834,9 @@ function RoadmapView({ data, completedIds, onToggle, onReset }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="relative overflow-hidden rounded-2xl p-6 mb-8 text-center border border-emerald-500/30"
-            style={{ background: "linear-gradient(135deg, rgba(16,185,129,0.08), rgba(139,92,246,0.08))" }}
+            className="relative overflow-hidden rounded-2xl p-6 mb-8 text-center border border-emerald-500/30 bg-gradient-to-br from-emerald-500/8 to-primary/8"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-violet-500/5" />
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-primary/5" />
             <motion.div
               animate={{ rotate: [0, -8, 8, -4, 4, 0] }}
               transition={{ delay: 0.3, duration: 0.6 }}

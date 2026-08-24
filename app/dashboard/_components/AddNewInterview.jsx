@@ -10,10 +10,34 @@ import {
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Textarea } from "../../../components/ui/textarea";
+import { RoleCombobox } from "../../../components/ui/role-combobox";
 import { LoaderCircle, Plus, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+
+const JOB_ROLES = [
+  "Full Stack Developer",
+  "Frontend Developer",
+  "Backend Developer",
+  "React Developer",
+  "Node.js Developer",
+  "Python Developer",
+  "Java Developer",
+  "Mobile Developer (Android)",
+  "Mobile Developer (iOS)",
+  "Data Scientist",
+  "Machine Learning Engineer",
+  "DevOps Engineer",
+  "QA Engineer",
+  "System Design",
+  "Product Manager",
+  "Senior Product Manager",
+  "HR Generalist",
+  "HR Business Partner",
+  "Technical Recruiter",
+  "Talent Acquisition Manager",
+];
 
 const AddNewInterview = () => {
   const [openDialog, setOpenDialog] = useState(false);
@@ -111,18 +135,19 @@ const AddNewInterview = () => {
           <form onSubmit={onSubmit} className="space-y-4 mt-2">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Job Role / Position</label>
-              <Input
-                placeholder="e.g. Full Stack Developer"
+              <RoleCombobox
+                options={JOB_ROLES}
+                placeholder="e.g. Full Stack Developer, HR Generalist"
                 required
                 value={jobPosition}
-                onChange={(e) => setJobPosition(e.target.value)}
+                onChange={setJobPosition}
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Tech Stack / Description</label>
+              <label className="text-sm font-medium">Key Skills / Description</label>
               <Textarea
-                placeholder="e.g. React, Node.js, PostgreSQL"
+                placeholder="e.g. React, Node.js, PostgreSQL — or Talent acquisition, HRIS, employee relations"
                 required
                 value={jobDesc}
                 onChange={(e) => setJobDesc(e.target.value)}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "/": {
+      "targetKind": "existing-ui",
+      "projectId": "8be160d0-3b68-487c-8a25-0c316f269c68",
+      "baselineDraftId": "f646f3b7-b544-4f3a-a7ee-d3b877bfa0a2",
+      "activeDraftId": "f646f3b7-b544-4f3a-a7ee-d3b877bfa0a2",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "app/page.js",
+        "app/globals.css",
+        "tailwind.config.js",
+        "components/ui/button.jsx"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "faef075e0836b57f746d4ddb79766b1d101ea7e8bcdb9e47870dde081f155ed9",
+        "app/page.js": "13357ed933c761cc26bae320c3f3259565747565ccc956600ea50bfa76876c62",
+        "app/globals.css": "b5d2afef14997b3397578a6d36fb2fd2e226c8eaf1037efdf6cec91d8151976f",
+        "tailwind.config.js": "9e9b3fd946f8c17ebf18366f24c3a85e23127467b59c02ee1559afd76e5ae962",
+        "components/ui/button.jsx": "16082faa28cbfa515ec5f073fdee6541d7d393e830f237d7d3294fcbefecc868"
+      },
+      "drafts": {
+        "f646f3b7-b544-4f3a-a7ee-d3b877bfa0a2": {
+          "title": "PrepTalk Landing Page - Pixel Perfect",
+          "visualDirection": "baseline reproduction — dark terminal/hacker aesthetic (unchanged)",
+          "currentVersion": 1
+        },
+        "94b8807f-1c48-4057-b69a-ea7ab487a96a": {
+          "title": "PrepTalk - Refined Terminal Aesthetic",
+          "visualDirection": "same terminal aesthetic, refined hierarchy/rhythm/depth — branch A",
+          "parentDraftId": "f646f3b7-b544-4f3a-a7ee-d3b877bfa0a2",
+          "currentVersion": 1
+        },
+        "2ad70bbe-8be8-41a4-a919-8ab27a894bcc": {
+          "title": "PrepTalk - Bold Editorial Terminal",
+          "visualDirection": "same terminal aesthetic, bolder/asymmetric editorial execution — branch B",
+          "parentDraftId": "f646f3b7-b544-4f3a-a7ee-d3b877bfa0a2",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-08-24T15:30:00Z"
+    }
+  }
+}

@@ -51,7 +51,9 @@ const InterView = () => {
         animate={{ opacity: 1, y: 0 }}
         className="mb-10 text-center"
       >
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Ready to practice?</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">
+          {interviewData?.jobPosition ? `Ready for your ${interviewData.jobPosition} interview?` : "Ready to practice?"}
+        </h1>
         <p className="text-muted-foreground">
           Review your interview details and enable your camera before starting.
         </p>
@@ -73,9 +75,14 @@ const InterView = () => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="flex flex-col items-center gap-3 text-muted-foreground">
+              <div className="flex flex-col items-center gap-3 text-muted-foreground text-center px-8">
                 <VideoOff className="h-12 w-12" />
-                <p className="text-sm">Camera is off</p>
+                <div>
+                  <p className="text-sm">Camera is off</p>
+                  <p className="text-xs mt-1">
+                    Enable it for eye-contact feedback — processed in your browser, never uploaded.
+                  </p>
+                </div>
               </div>
             )}
           </div>
