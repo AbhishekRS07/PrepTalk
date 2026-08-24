@@ -94,7 +94,7 @@ const faqs = [
   },
   {
     q: "What AI model powers the feedback?",
-    a: "PrepTalk uses Llama 3.3 70B via Groq for fast, high-quality feedback, live conversation, and resume analysis.",
+    a: "PrepTalk uses GPT-OSS 120B via Groq for fast, high-quality feedback, live conversation, and resume analysis.",
   },
   {
     q: "When will Pro and Team plans launch?",

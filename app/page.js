@@ -10,22 +10,16 @@ import Image from "next/image";
 import {
   Brain,
   Mic,
-  BarChart3,
   Code2,
-  BookOpen,
   ArrowRight,
   CheckCircle2,
   Sparkles,
   ChevronRight,
   ChevronDown,
   FileText,
-  TrendingUp,
   MapPin,
   Check,
-  CalendarCheck,
-  Zap,
   ScanText,
-  Users,
 } from "lucide-react";
 
 // Load 3D canvas only on client — no SSR
@@ -67,16 +61,6 @@ const features = [
     desc: "Upload your resume and get questions grounded in your actual projects, companies, and skills — not generic prompts.",
   },
   {
-    icon: TrendingUp,
-    title: "Progress Analytics",
-    desc: "Track your scores across all interview formats over time. See which roles and topics you're strongest in.",
-  },
-  {
-    icon: BookOpen,
-    title: "Interview Q&A Bank",
-    desc: "Browse AI-generated interview questions by job profile and experience level. New set every time.",
-  },
-  {
     icon: Code2,
     title: "DSA Practice + IDE",
     desc: "Solve AI-generated DSA problems by topic and experience — with a built-in VS Code-style editor and live code execution.",
@@ -87,24 +71,9 @@ const features = [
     desc: "Get a personalized step-by-step preparation plan based on your current role and target job — with milestone tracking and PrepTalk feature links at every step.",
   },
   {
-    icon: CalendarCheck,
-    title: "Interview Tracker",
-    desc: "Log upcoming and completed interviews. Get a day-by-day prep plan with theory tasks, DSA problems, and coding challenges automatically scheduled to your interview date.",
-  },
-  {
-    icon: Zap,
-    title: "Coding Challenges",
-    desc: "Practice real-world business logic problems — not just LeetCode. AI generates scenario-based challenges with a full Monaco IDE, test runner, and hints panel.",
-  },
-  {
     icon: ScanText,
     title: "Resume ATS Analyzer",
     desc: "Upload your resume and get an ATS score, keyword gap analysis, section-by-section feedback, and a priority-sorted action plan — with an optional JD match mode.",
-  },
-  {
-    icon: Users,
-    title: "Behavioral Coach",
-    desc: "Master the STAR method with AI-powered behavioral interview coaching tailored to your role. Practice common leadership, conflict, and situational questions.",
   },
 ];
 
@@ -128,7 +97,6 @@ const steps = [
 
 const stats = [
   { value: "5+", label: "Questions per session" },
-  { value: "AI", label: "Powered feedback" },
   { value: "∞", label: "Practice sessions" },
   { value: "100%", label: "Free to use" },
 ];
@@ -139,7 +107,7 @@ const headlineWords = [
   "coding round",
   "system design",
   "tech screen",
-  "dream job",
+  "behavioral round",
 ];
 
 // Marquee keywords
@@ -261,7 +229,7 @@ function Hero({ onGetStarted }) {
         <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-background to-transparent pointer-events-none" />
 
         {/* Top-left glow blob */}
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-violet-600/8 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-primary/8 rounded-full blur-3xl pointer-events-none" />
 
         {/* Top-right glow blob */}
         <div className="absolute top-1/3 -right-20 w-80 h-80 bg-indigo-600/8 rounded-full blur-3xl pointer-events-none" />
@@ -362,7 +330,7 @@ function Hero({ onGetStarted }) {
           variants={fadeIn}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto"
+          className="grid grid-cols-3 gap-4 max-w-xl mx-auto"
         >
           {stats.map((s) => (
             <div
@@ -510,8 +478,8 @@ function Features() {
             Everything you need to prepare
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            One platform, eleven powerful tools to transform how you prepare for
-            every stage of the interview process.
+            One platform to transform how you prepare for every stage of the
+            interview process.
           </p>
         </motion.div>
 
@@ -614,7 +582,7 @@ function RoadmapSpotlight({ onGetStarted }) {
                   <span className="absolute inset-0 flex items-center justify-center text-xs font-black">50%</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-violet-400 font-bold mb-0.5">TARGET ROLE</p>
+                  <p className="text-xs text-primary font-bold mb-0.5">TARGET ROLE</p>
                   <p className="font-black text-base truncate">Senior Frontend Dev</p>
                   <div className="h-1.5 rounded-full bg-border/50 mt-2 overflow-hidden">
                     <div className="h-full w-1/2 rounded-full bg-gradient-to-r from-violet-500 to-emerald-500" style={{ boxShadow: "0 0 8px rgba(139,92,246,0.5)" }} />
@@ -741,18 +709,9 @@ function HowItWorks({ onGetStarted }) {
               </h3>
               <ul className="space-y-3">
                 {[
-                  "Mock interviews tailored to your role, stack, and experience",
-                  "Live AI interviewer that probes and follows up in real time",
-                  "Resume-based questions grounded in your actual experience",
-                  "Progress analytics across all interview formats",
                   "Per-answer AI rating out of 10 with improvement tips",
-                  "Interview Q&A bank by profile & experience",
-                  "DSA problems with built-in IDE & code execution",
-                  "AI learning roadmap with milestone tracking",
-                  "Interview Tracker with day-by-day prep plans",
-                  "Coding Challenges — scenario-based with live test runner",
-                  "Resume ATS Analyzer with keyword gap analysis",
-                  "Behavioral Coach for STAR-method practice",
+                  "No scheduling, no interviewer — practice on your own time",
+                  "Every session saved so you can track improvement over time",
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-sm">
                     <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />

@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { getModel } from "@/lib/langchain";
+import { getModel, getLiveModel } from "@/lib/langchain";
 import { cleanJson } from "@/lib/utils";
 import { HumanMessage, AIMessage, SystemMessage } from "@langchain/core/messages";
 
@@ -42,28 +42,25 @@ export async function POST(request) {
 
   const { messages, role, experience, techStack, action } = await request.json();
 
-  const model = getModel();
-
   // Generate debrief
   if (action === "debrief") {
     const conversation = messages
       .map((m) => `${m.role === "user" ? "Candidate" : "Interviewer"}: ${m.content}`)
       .join("\n");
 
-    const res = await model.invoke([
-      new SystemMessage("You are an expert interview coach."),
-      new HumanMessage(DEBRIEF_PROMPT(role, experience, techStack, conversation)),
-    ]);
-
     try {
+      const res = await getModel().invoke([
+        new SystemMessage("You are an expert interview coach."),
+        new HumanMessage(DEBRIEF_PROMPT(role, experience, techStack, conversation)),
+      ]);
       const debrief = JSON.parse(cleanJson(res.content.trim()));
       return NextResponse.json({ debrief });
     } catch {
-      return NextResponse.json({ error: "Failed to parse debrief" }, { status: 500 });
+      return NextResponse.json({ error: "Failed to generate debrief" }, { status: 500 });
     }
   }
 
-  // Normal conversation turn
+  // Normal conversation turn — low reasoning effort keeps replies snappy for live back-and-forth.
   const langchainMessages = [
     new SystemMessage(SYSTEM_PROMPT(role, experience, techStack)),
     ...messages.map((m) =>
@@ -71,6 +68,10 @@ export async function POST(request) {
     ),
   ];
 
-  const res = await model.invoke(langchainMessages);
-  return NextResponse.json({ reply: res.content });
+  try {
+    const res = await getLiveModel().invoke(langchainMessages);
+    return NextResponse.json({ reply: res.content });
+  } catch {
+    return NextResponse.json({ error: "Failed to get interviewer reply" }, { status: 500 });
+  }
 }

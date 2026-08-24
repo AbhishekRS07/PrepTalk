@@ -59,8 +59,13 @@ Available PrepTalk features and their paths:
 
 Map each milestone to the single most relevant PrepTalk feature. Make tasks highly specific to what a "${targetRole}" interview looks like, and calibrated to the gap between their current level ("${currentStatus}") and the target. Consider the skill gap — a service company employee targeting a product role needs different preparation than someone already in a product company.`;
 
-  const raw = await runPrompt(prompt);
-  const roadmap = JSON.parse(cleanJson(raw));
+  let roadmap;
+  try {
+    const raw = await runPrompt(prompt);
+    roadmap = JSON.parse(cleanJson(raw));
+  } catch {
+    return NextResponse.json({ error: "Failed to generate roadmap. Please try again." }, { status: 500 });
+  }
 
   // Save to DB (upsert — one roadmap per user)
   await supabase.from("roadmap").upsert({

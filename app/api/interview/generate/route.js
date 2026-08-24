@@ -19,10 +19,14 @@ export async function POST(request) {
 
   const prompt = `Job position: ${jobPosition}, Job Description: ${jobDesc}, Years of Experience: ${jobExperience}. Depending upon the job position, job description, and the years of experience, generate ${questionCount} interview questions along with the answers in JSON format. Provide "question" and "answer" fields in JSON.`;
 
-  const raw = await runPrompt(prompt);
-  const cleaned = cleanJson(raw);
-
-  JSON.parse(cleaned);
+  let cleaned;
+  try {
+    const raw = await runPrompt(prompt);
+    cleaned = cleanJson(raw);
+    JSON.parse(cleaned);
+  } catch {
+    return NextResponse.json({ error: "Failed to generate interview questions. Please try again." }, { status: 500 });
+  }
 
   const mockId = uuidv4();
 

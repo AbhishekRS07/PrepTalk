@@ -84,7 +84,8 @@ Return a JSON object (no markdown, no code block) with exactly these fields:
     const raw = await runPrompt(prompt);
     const parsed = JSON.parse(cleanJson(raw));
     return NextResponse.json(parsed);
-  } catch {
+  } catch (err) {
+    console.error("Resume analysis error:", err);
     return NextResponse.json({ error: "Failed to analyze resume" }, { status: 500 });
   }
 }

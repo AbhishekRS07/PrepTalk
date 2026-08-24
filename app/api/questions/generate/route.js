@@ -12,6 +12,10 @@ export async function POST(request) {
     return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
   }
 
-  const text = await runPrompt(prompt);
-  return NextResponse.json({ text });
+  try {
+    const text = await runPrompt(prompt);
+    return NextResponse.json({ text });
+  } catch {
+    return NextResponse.json({ error: "Failed to generate hint. Please try again." }, { status: 500 });
+  }
 }
