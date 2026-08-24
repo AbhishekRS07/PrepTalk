@@ -63,18 +63,18 @@ export default function LeaderboardPage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex items-center justify-between bg-primary/8 border border-primary/25 rounded-2xl px-5 py-4"
+          className="flex items-center justify-between gap-3 bg-primary/8 border border-primary/25 rounded-2xl px-5 py-4"
         >
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
               <Flame className="h-5 w-5 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-semibold">Your rank</p>
-              <p className="text-xs text-muted-foreground">{myRow.displayName} · {myRow.totalSessions} sessions</p>
+              <p className="text-xs text-muted-foreground truncate">{myRow.displayName} · {myRow.totalSessions} sessions</p>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <p className={cn("text-2xl font-black font-mono", ratingColorClass(myRow.avg))}>
               #{myRow.rank}
             </p>
@@ -97,14 +97,14 @@ export default function LeaderboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 + i * 0.08 }}
                 className={cn(
-                  "relative flex flex-col items-center justify-end rounded-2xl border p-4 pb-5",
+                  "relative flex flex-col items-center justify-end rounded-2xl border p-4 pb-5 min-w-0",
                   medal.bg,
                   r.email === myEmail && "ring-2 ring-primary"
                 )}
                 style={{ minHeight: heights[i] === "h-36" ? 144 : 112 }}
               >
                 <span className="text-3xl mb-1">{medal.icon}</span>
-                <p className={cn("text-sm font-black", medal.color)}>{r.displayName}</p>
+                <p className={cn("text-sm font-black max-w-full truncate", medal.color)}>{r.displayName}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{r.avg}/10</p>
                 <p className="text-xs text-muted-foreground">{r.totalSessions} sessions</p>
               </motion.div>
@@ -153,14 +153,14 @@ export default function LeaderboardPage() {
                   </span>
 
                   {/* Name */}
-                  <div className="col-span-5 flex items-center gap-2">
+                  <div className="col-span-5 flex items-center gap-2 min-w-0">
                     <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                       <span className="text-xs font-black text-primary">
                         {r.displayName.slice(0, 2).toUpperCase()}
                       </span>
                     </div>
-                    <div>
-                      <p className={cn("text-sm font-semibold", isMe && "text-primary")}>
+                    <div className="min-w-0">
+                      <p className={cn("text-sm font-semibold truncate", isMe && "text-primary")}>
                         {r.displayName}
                         {isMe && <span className="ml-1.5 text-xs font-normal text-primary/70">(you)</span>}
                       </p>

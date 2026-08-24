@@ -47,7 +47,7 @@ export default function StreakWidget() {
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, y: -8, height: 0 }}
             transition={{ duration: 0.25 }}
-            className="flex items-center justify-between gap-3 bg-amber-500/10 border border-amber-500/25 rounded-xl px-4 py-3"
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-500/10 border border-amber-500/25 rounded-xl px-4 py-3"
           >
             <div className="flex items-center gap-2.5">
               <Zap className="h-4 w-4 text-amber-500 shrink-0" />
@@ -57,7 +57,7 @@ export default function StreakWidget() {
                   : `${lastSessionDaysAgo} days since your last session. Time to get back in the zone!`}
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
               <Link href="/dashboard"
                 className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline whitespace-nowrap">
                 Practice now

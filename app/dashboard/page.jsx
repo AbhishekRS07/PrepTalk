@@ -74,13 +74,13 @@ const Dashboard = () => {
       {/* Tabbed history */}
       <motion.div variants={sectionVariants} initial="hidden" animate="visible" custom={3}>
         {/* Tab bar */}
-        <div className="flex items-center gap-1 mb-6 bg-secondary/50 rounded-xl p-1 w-fit">
+        <div className="flex items-center gap-1 mb-6 bg-secondary/50 rounded-xl p-1 w-full sm:w-fit overflow-x-auto scrollbar-hide">
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium font-mono lowercase transition-all duration-200",
+                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium font-mono lowercase transition-all duration-200 whitespace-nowrap shrink-0",
                 activeTab === id
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"

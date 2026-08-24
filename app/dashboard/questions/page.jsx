@@ -190,7 +190,7 @@ Respond helpfully in 2-4 sentences. Give hints, explain concepts, point out bugs
   return (
     <div className="flex flex-col h-full">
       {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-card shrink-0 flex-wrap md:flex-nowrap">
         <div className="flex items-center gap-2 min-w-0">
           <Code2 className="h-4 w-4 text-primary shrink-0" />
           <span className="text-sm font-semibold truncate">{problem.title}</span>
@@ -198,7 +198,7 @@ Respond helpfully in 2-4 sentences. Give hints, explain concepts, point out bugs
             {problem.difficulty}
           </span>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 flex-wrap justify-end w-full md:w-auto">
           <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">
             {LANGUAGES.map((l) => (
               <button key={l.value} onClick={() => handleLangChange(l)}
@@ -246,9 +246,9 @@ Respond helpfully in 2-4 sentences. Give hints, explain concepts, point out bugs
       </div>
 
       {/* ── Body ── */}
-      <div className="flex flex-1 min-h-0 divide-x divide-border">
+      <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-y-auto md:overflow-hidden md:divide-x divide-border">
         {/* Problem description */}
-        <div className="w-2/5 overflow-y-auto p-5 space-y-4 text-sm">
+        <div className="w-full md:w-2/5 max-h-[45vh] md:max-h-none overflow-y-auto p-5 space-y-4 text-sm border-b md:border-b-0 border-border shrink-0 md:shrink">
           <div>
             <h2 className="font-bold text-base mb-1">{problem.title}</h2>
             <p className="text-muted-foreground leading-relaxed">{problem.description}</p>
@@ -286,7 +286,7 @@ Respond helpfully in 2-4 sentences. Give hints, explain concepts, point out bugs
         </div>
 
         {/* Editor + output */}
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-[50vh] md:min-h-0">
           <div className="flex-1 min-h-0">
             <MonacoEditor height="100%" language={lang.value === "c++" ? "cpp" : lang.value}
               theme="vs-dark" value={code} onChange={(v) => setCode(v || "")}
@@ -324,11 +324,11 @@ Respond helpfully in 2-4 sentences. Give hints, explain concepts, point out bugs
         <AnimatePresence>
           {chatOpen && (
             <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 320, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="flex flex-col min-h-0 overflow-hidden bg-card border-l border-border shrink-0"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 12 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="flex flex-col min-h-[45vh] md:min-h-0 w-full md:w-80 overflow-hidden bg-card border-t md:border-t-0 md:border-l border-border shrink-0"
             >
               {/* Chat header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">

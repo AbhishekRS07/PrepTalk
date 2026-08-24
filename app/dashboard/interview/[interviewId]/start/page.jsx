@@ -308,7 +308,7 @@ const StartInterview = () => {
               <Button size="sm" variant="destructive" onClick={handleEndInterview} disabled={ending} className="gap-1.5">
                 {ending
                   ? <Loader2 className="h-4 w-4 animate-spin" />
-                  : <><CircleStop className="h-4 w-4" />End Interview</>
+                  : <><CircleStop className="h-4 w-4" /><span className="hidden sm:inline">End Interview</span></>
                 }
               </Button>
             )}

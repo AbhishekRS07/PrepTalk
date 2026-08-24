@@ -513,20 +513,20 @@ export default function LiveInterviewPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-background/80 backdrop-blur shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border bg-background/80 backdrop-blur shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <Mic className="h-4 w-4 text-primary" />
           </div>
-          <div>
-            <p className="text-sm font-semibold">{config?.role}</p>
-            <p className="text-xs text-muted-foreground">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold truncate">{config?.role}</p>
+            <p className="text-xs text-muted-foreground truncate">
               {config?.experience} yr exp · {exchangeCount} {exchangeCount === 1 ? "exchange" : "exchanges"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Mute TTS */}
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleMute} title={muted ? "Unmute AI voice" : "Mute AI voice"}>
             {muted ? <VolumeX className="h-4 w-4 text-muted-foreground" /> : <Volume2 className="h-4 w-4" />}
@@ -540,7 +540,8 @@ export default function LiveInterviewPage() {
             className="gap-1.5"
           >
             {ending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CircleStop className="h-4 w-4" />}
-            End & Get Debrief
+            <span className="hidden sm:inline">End & Get Debrief</span>
+            <span className="sm:hidden">End</span>
           </Button>
         </div>
       </div>

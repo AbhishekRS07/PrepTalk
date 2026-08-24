@@ -234,9 +234,9 @@ export default function AnalyticsPage() {
       {data.trend.length >= 1 && (
         <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
           className="bg-card border border-border rounded-2xl p-6">
-          <div className="flex items-start justify-between mb-1">
+          <div className="flex items-start justify-between mb-1 gap-3 flex-wrap">
             <h2 className="text-base font-semibold">Rating trend</h2>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               {Object.values(TYPE_META).map((m) => (
                 <span key={m.label} className="flex items-center gap-1 text-xs text-muted-foreground">
                   <span className="h-2 w-2 rounded-full inline-block" style={{ background: m.color }} />
@@ -337,7 +337,7 @@ export default function AnalyticsPage() {
                     )}
                   </div>
                   <Button variant="ghost" size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-xs gap-1"
+                    className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-xs gap-1"
                     onClick={() => {
                       if (s.type === "live") {
                         router.push(`/dashboard/live-interview/${s.mockId}`);

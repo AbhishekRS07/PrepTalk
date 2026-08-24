@@ -618,10 +618,10 @@ function MilestoneItem({ milestone, isCompleted, isCurrent, isLast, phaseComplet
                         <Button
                           size="sm"
                           variant="outline"
-                          className="gap-1.5 flex-1 h-9"
+                          className="gap-1.5 flex-1 h-auto min-h-9 py-1.5 whitespace-normal text-center"
                           onClick={() => router.push(milestone.appAction.path)}
                         >
-                          <ExternalLink className="h-3.5 w-3.5" />
+                          <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                           {milestone.appAction.label}
                         </Button>
                       )}

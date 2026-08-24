@@ -59,7 +59,7 @@ function StarGuide({ guide }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
       {parts.map(({ key, label, color, bg, border }) => (
         <div key={key} className={cn("rounded-xl border p-3", bg, border)}>
           <p className={cn("text-xs font-black mb-1", color)}>{label}</p>
@@ -114,7 +114,7 @@ function StarBreakdown({ breakdown }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
       {parts.map(({ key, label }) => {
         const item = breakdown[key];
         const style = STAR_COLORS[item?.quality] ?? STAR_COLORS.weak;
@@ -414,7 +414,7 @@ export default function BehavioralPage() {
       {!selectedCat && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <p className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider mb-3">Choose a category</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {CATEGORIES.map((cat) => (
               <motion.button
                 key={cat.id}
@@ -472,7 +472,7 @@ export default function BehavioralPage() {
                   <p className="text-xs text-muted-foreground leading-relaxed italic">{question.context}</p>
 
                   {/* Tips + red flags */}
-                  <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     {question.tips?.length > 0 && (
                       <div className="space-y-1">
                         <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
