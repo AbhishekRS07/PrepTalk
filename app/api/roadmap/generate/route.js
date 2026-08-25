@@ -1,7 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { runPrompt } from "@/lib/langchain";
-import { cleanJson } from "@/lib/utils";
+import { runPromptJSON } from "@/lib/langchain";
 
 export async function POST(req) {
   const { user, supabase, unauthorized } = await requireUser();
@@ -61,9 +60,9 @@ Map each milestone to the single most relevant PrepTalk feature. Make tasks high
 
   let roadmap;
   try {
-    const raw = await runPrompt(prompt);
-    roadmap = JSON.parse(cleanJson(raw));
-  } catch {
+    roadmap = await runPromptJSON(prompt);
+  } catch (err) {
+    console.error("Roadmap generation error:", err);
     return NextResponse.json({ error: "Failed to generate roadmap. Please try again." }, { status: 500 });
   }
 

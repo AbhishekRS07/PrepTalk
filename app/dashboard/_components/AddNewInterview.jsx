@@ -17,6 +17,10 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 const JOB_ROLES = [
+  "Junior Developer",
+  "Mid-Level Developer",
+  "Senior Developer",
+  "Technical Lead",
   "Full Stack Developer",
   "Frontend Developer",
   "Backend Developer",

@@ -1,7 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { runPrompt } from "@/lib/langchain";
-import { cleanJson } from "@/lib/utils";
+import { runPromptJSON } from "@/lib/langchain";
 import { v4 as uuidv4 } from "uuid";
 import moment from "moment";
 import { extractText } from "unpdf";
@@ -79,18 +78,12 @@ Rules:
 
 Return ONLY a valid JSON array with "question" and "answer" fields. No markdown, no explanation.`;
 
-  let raw;
-  try {
-    raw = await runPrompt(prompt);
-  } catch (err) {
-    return NextResponse.json({ error: "AI generation failed. Please try again." }, { status: 500 });
-  }
-
   let parsed;
   try {
-    parsed = JSON.parse(cleanJson(raw, "array"));
-  } catch {
-    return NextResponse.json({ error: "Failed to parse AI response." }, { status: 500 });
+    parsed = await runPromptJSON(prompt, "array");
+  } catch (err) {
+    console.error("Resume-based interview generation error:", err);
+    return NextResponse.json({ error: "AI generation failed. Please try again." }, { status: 500 });
   }
 
   const mockId = uuidv4();

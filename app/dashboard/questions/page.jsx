@@ -50,6 +50,7 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false 
 // ── Constants ─────────────────────────────────────────────────────
 
 const PROFILES = [
+  "Junior Developer","Mid-Level Developer","Senior Developer","Technical Lead",
   "Frontend Developer","Backend Developer","Full Stack Developer","React Developer",
   "Node.js Developer","Python Developer","Java Developer","DevOps Engineer",
   "Data Scientist","Machine Learning Engineer","Android Developer","iOS Developer",

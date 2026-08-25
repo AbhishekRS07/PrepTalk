@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { runPrompt } from "@/lib/langchain";
-import { cleanJson } from "@/lib/utils";
+import { runPromptJSON } from "@/lib/langchain";
 import { extractText } from "unpdf";
 
 export async function POST(req) {
@@ -81,8 +80,7 @@ Return a JSON object (no markdown, no code block) with exactly these fields:
 }`;
 
   try {
-    const raw = await runPrompt(prompt);
-    const parsed = JSON.parse(cleanJson(raw));
+    const parsed = await runPromptJSON(prompt);
     return NextResponse.json(parsed);
   } catch (err) {
     console.error("Resume analysis error:", err);

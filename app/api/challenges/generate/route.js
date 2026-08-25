@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { runPrompt } from "@/lib/langchain";
-import { cleanJson } from "@/lib/utils";
+import { runPromptJSON } from "@/lib/langchain";
 
 const LEVEL_LABELS = {
   "0": "Fresher (no experience)",
@@ -79,8 +78,7 @@ Return ONLY a valid JSON object (no markdown, no code fences):
 }`;
 
   try {
-    const raw = await runPrompt(prompt);
-    const parsed = JSON.parse(cleanJson(raw));
+    const parsed = await runPromptJSON(prompt);
     return NextResponse.json(parsed);
   } catch (err) {
     console.error("Challenge generation error:", err);

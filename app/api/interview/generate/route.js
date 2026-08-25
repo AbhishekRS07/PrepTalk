@@ -1,7 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { runPrompt } from "@/lib/langchain";
-import { cleanJson } from "@/lib/utils";
+import { runPromptJSON } from "@/lib/langchain";
 import { v4 as uuidv4 } from "uuid";
 import moment from "moment";
 
@@ -21,10 +20,9 @@ export async function POST(request) {
 
   let cleaned;
   try {
-    const raw = await runPrompt(prompt);
-    cleaned = cleanJson(raw);
-    JSON.parse(cleaned);
-  } catch {
+    cleaned = JSON.stringify(await runPromptJSON(prompt));
+  } catch (err) {
+    console.error("Interview generation error:", err);
     return NextResponse.json({ error: "Failed to generate interview questions. Please try again." }, { status: 500 });
   }
 

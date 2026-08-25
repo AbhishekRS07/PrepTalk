@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const JOB_ROLES = [
+  "Junior Developer", "Mid-Level Developer", "Senior Developer", "Technical Lead",
   "Full Stack Developer", "Frontend Developer", "Backend Developer",
   "React Developer", "Node.js Developer", "Python Developer", "Java Developer",
   "Mobile Developer (Android)", "Mobile Developer (iOS)",

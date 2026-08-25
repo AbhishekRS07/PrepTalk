@@ -1,7 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { runPrompt } from "@/lib/langchain";
-import { cleanJson } from "@/lib/utils";
+import { runPromptJSON } from "@/lib/langchain";
 import { tavily } from "@tavily/core";
 
 let _tavilyClient;
@@ -28,8 +27,7 @@ Return this exact JSON shape:
   "keyTopics": ["System Design", "React", "Node.js"]
 }`;
 
-  const raw = await runPrompt(prompt);
-  const meta = JSON.parse(cleanJson(raw));
+  const meta = await runPromptJSON(prompt);
   if (manualCompany) meta.company = manualCompany;
   return meta;
 }
@@ -126,8 +124,7 @@ Reply ONLY with a valid JSON array. Each object must have:
 
 No markdown, no explanation. Just the JSON array.`;
 
-  const raw = await runPrompt(prompt);
-  return JSON.parse(cleanJson(raw, "array"));
+  return runPromptJSON(prompt, "array");
 }
 
 // ── Route handler ─────────────────────────────────────────────────
@@ -189,6 +186,7 @@ export async function POST(req) {
   try {
     questions = await synthesizeQuestions(entries);
   } catch (err) {
+    console.error("JD-prep question synthesis error:", err);
     return NextResponse.json(
       { error: "Failed to generate questions. Please try again." },
       { status: 500 }

@@ -15,13 +15,13 @@ const getSupabase = () => {
 
 export async function GET(req, { params }) {
   const supabase = getSupabase();
-  const { token } = params;
+  const { token } = await params;
   if (!token) return NextResponse.json({ error: "Missing token" }, { status: 400 });
 
   // Find the interview by share token
   const { data: interview, error } = await supabase
     .from("preptalk")
-    .select("mockId, jobPosition, jobExperience, jobDesc, jsonMockResp, createdAt")
+    .select("mockId, jobPosition, jobexperience, jobDesc, jsonMockResp, createdAt")
     .eq("shareToken", token)
     .single();
 
@@ -62,7 +62,7 @@ export async function GET(req, { params }) {
 
   return NextResponse.json({
     role: interview.jobPosition,
-    experience: interview.jobExperience,
+    experience: interview.jobexperience,
     createdAt: interview.createdAt,
     avgRating,
     items: merged,

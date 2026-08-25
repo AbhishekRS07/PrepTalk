@@ -1,7 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { runPrompt } from "@/lib/langchain";
-import { cleanJson } from "@/lib/utils";
+import { runPromptJSON } from "@/lib/langchain";
 import moment from "moment";
 
 export async function POST(request) {
@@ -20,8 +19,7 @@ export async function POST(request) {
   let feedback = "";
 
   try {
-    const raw = await runPrompt(prompt);
-    const parsed = JSON.parse(cleanJson(raw));
+    const parsed = await runPromptJSON(prompt);
     rating = String(parsed?.rating).replace(/[^0-9.]/g, "") || "0";
     feedback = parsed?.feedback || "";
   } catch (err) {

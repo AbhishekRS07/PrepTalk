@@ -48,16 +48,23 @@ export async function POST(request) {
       .map((m) => `${m.role === "user" ? "Candidate" : "Interviewer"}: ${m.content}`)
       .join("\n");
 
-    try {
-      const res = await getModel().invoke([
-        new SystemMessage("You are an expert interview coach."),
-        new HumanMessage(DEBRIEF_PROMPT(role, experience, techStack, conversation)),
-      ]);
-      const debrief = JSON.parse(cleanJson(res.content.trim()));
-      return NextResponse.json({ debrief });
-    } catch {
-      return NextResponse.json({ error: "Failed to generate debrief" }, { status: 500 });
+    // Retry once on malformed JSON — gpt-oss-120b occasionally emits a stray comma or
+    // unescaped quote; identical prompts succeed on retry (confirmed live).
+    let lastErr;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await getModel().invoke([
+          new SystemMessage("You are an expert interview coach."),
+          new HumanMessage(DEBRIEF_PROMPT(role, experience, techStack, conversation)),
+        ]);
+        const debrief = JSON.parse(cleanJson(res.content.trim()));
+        return NextResponse.json({ debrief });
+      } catch (err) {
+        lastErr = err;
+      }
     }
+    console.error("Debrief generation error:", lastErr);
+    return NextResponse.json({ error: "Failed to generate debrief" }, { status: 500 });
   }
 
   // Normal conversation turn — low reasoning effort keeps replies snappy for live back-and-forth.
@@ -71,7 +78,8 @@ export async function POST(request) {
   try {
     const res = await getLiveModel().invoke(langchainMessages);
     return NextResponse.json({ reply: res.content });
-  } catch {
+  } catch (err) {
+    console.error("Live interview reply error:", err);
     return NextResponse.json({ error: "Failed to get interviewer reply" }, { status: 500 });
   }
 }

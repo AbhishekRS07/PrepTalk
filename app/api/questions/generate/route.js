@@ -15,7 +15,8 @@ export async function POST(request) {
   try {
     const text = await runPrompt(prompt);
     return NextResponse.json({ text });
-  } catch {
+  } catch (err) {
+    console.error("Question generation error:", err);
     return NextResponse.json({ error: "Failed to generate hint. Please try again." }, { status: 500 });
   }
 }

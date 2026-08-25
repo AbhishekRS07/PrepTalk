@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { runPrompt } from "@/lib/langchain";
-import { cleanJson } from "@/lib/utils";
+import { runPromptJSON } from "@/lib/langchain";
 
 export async function POST(req) {
   const { unauthorized } = await requireUser();
@@ -32,10 +31,10 @@ Return a JSON object (no markdown, no code block) with exactly these fields:
 }`;
 
   try {
-    const raw = await runPrompt(prompt);
-    const parsed = JSON.parse(cleanJson(raw));
+    const parsed = await runPromptJSON(prompt);
     return NextResponse.json(parsed);
-  } catch {
+  } catch (err) {
+    console.error("Behavioral feedback error:", err);
     return NextResponse.json({ error: "Failed to evaluate answer" }, { status: 500 });
   }
 }
