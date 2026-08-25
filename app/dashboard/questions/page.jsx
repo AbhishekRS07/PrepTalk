@@ -29,6 +29,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useSearchParams } from "next/navigation";
 import { Button } from "../../../components/ui/button";
+import { RoleCombobox } from "../../../components/ui/role-combobox";
 import { cn } from "@/lib/utils";
 import { fadeUp, listContainer, listItem } from "@/lib/animations";
 import ChallengesTab, { CHALLENGE_CATEGORIES, ChallengeIDE, ChallengeDescription } from "./ChallengesTab";
@@ -861,16 +862,19 @@ function InterviewQATab() {
     <div className="space-y-6">
       {/* Controls card */}
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}
-        className="relative bg-card border border-border rounded-2xl p-6 space-y-5 overflow-hidden">
-        <div className="absolute top-0 right-0 w-48 h-48 bg-primary/4 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2" />
+        className="relative bg-card border border-border rounded-2xl p-6 space-y-5">
+        <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-primary/4 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide">Job Profile</label>
-            <select value={profile} onChange={(e) => { setProfile(e.target.value); setGenerated(false); setQuestions([]); }}
-              className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-              <option value="">Select a profile…</option>
-              {PROFILES.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
+            <RoleCombobox
+              options={PROFILES}
+              placeholder="Select a profile…"
+              value={profile}
+              onChange={(val) => { setProfile(val); setGenerated(false); setQuestions([]); }}
+            />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide">Experience Level</label>
