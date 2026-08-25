@@ -268,3 +268,43 @@ near-identical list. Consolidating into one shared constant would prevent the ne
 person from having to make this same edit 5 times (or missing one, like `PROFILES` had
 already drifted) — flagged here rather than done unprompted, since it's a structural
 change beyond what was asked.
+
+## 2026-08-25 — Replace top navbar + profile dropdown with a collapsible sidebar
+
+**Files changed:** `app/dashboard/_components/Sidebar.jsx` (new), `app/dashboard/layout.jsx`,
+`app/dashboard/_components/Header.jsx` (deleted).
+
+**Reason:** User flagged that navigation was split awkwardly across a top navbar and a
+profile dropdown menu, and asked (after an exploratory discussion where a sidebar was
+recommended) to move all navigation into a single collapsible sidebar containing exactly:
+Dashboard, Questions, Analytics, Leaderboard, My Roadmap, Interview Tracker, Interview
+Journal, Behavioral Coach, Resume Analyzer, Upgrade, How it works.
+
+**What changed:** Built `Sidebar.jsx` to replace `Header.jsx` entirely. Desktop: a
+collapsible left rail (`w-64` ↔ `w-[76px]`, preference persisted in `localStorage` under
+`preptalk_sidebar_collapsed`), grouped into Practice / Progress / Coaching sections plus
+footer links (Upgrade, How it works) and an account popover (Theme, Settings, Change
+username, Sign out) — reusing the existing `EditUsernameForm`. Mobile (`md:hidden`): a
+sticky top bar with a hamburger that opens a right-side drawer (Framer Motion
+`AnimatePresence`, slide from `x:100%`) containing the same nav plus Settings/Change
+username/Sign out; "Change username" opens a separate bottom sheet (`usernameSheetOpen`,
+slide up from `y:100%`) rather than overloading the drawer state, to avoid conflating two
+different UI concerns. Body scroll is locked while the drawer or sheet is open.
+`app/dashboard/layout.jsx` was changed from `<Header/> + centered <main>` to a
+`md:flex` row of `<Sidebar/>` + `<main className="flex-1 min-w-0">` with a `max-w-6xl`
+inner wrapper approximating the old content width.
+
+**Tests:** `npm run build` passed cleanly. Manually verified live in the browser: desktop
+collapse/expand, navigation + active-state highlighting, account popover (theme toggle,
+settings link, change-username inline form, sign out) all work. Mobile: top bar renders,
+hamburger opens/closes the drawer with correct content and active-state, drawer nav links
+navigate and auto-close, "Change username" opens the bottom sheet with a focused input and
+closes cleanly via Cancel. Spot-checked all 11 destination pages (Dashboard, Questions,
+Analytics, Leaderboard, My Roadmap, Interview Tracker, Interview Journal, Behavioral Coach,
+Resume Analyzer, Upgrade, How it works) under the new layout on mobile width — no overlap
+or clipping issues found.
+
+**Not done:** not committed/pushed yet — pending explicit go-ahead, consistent with this
+session's pattern of only pushing when asked. Resume Interview page's code-execution flow
+and DSA in-browser IDE remain un-click-tested (flagged in an earlier entry, unrelated to
+this change).
