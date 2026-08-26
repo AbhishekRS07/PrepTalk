@@ -1,10 +1,14 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { runPromptJSON, getBigModel } from "@/lib/langchain";
+import { rateLimitOrResponse } from "@/lib/rateLimit";
 
 export async function POST(req) {
   const { user, supabase, unauthorized } = await requireUser();
   if (unauthorized) return unauthorized;
+
+  const limited = await rateLimitOrResponse(user.email, "roadmap-generate", 10, 300);
+  if (limited) return limited;
 
   const { currentStatus, targetRole } = await req.json();
   if (!currentStatus || !targetRole)

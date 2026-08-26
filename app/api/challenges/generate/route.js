@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { runPromptJSON, getBigModel } from "@/lib/langchain";
+import { rateLimitOrResponse } from "@/lib/rateLimit";
 
 const LEVEL_LABELS = {
   "0": "Fresher (no experience)",
@@ -17,8 +18,11 @@ const LEVEL_DIFFICULTY = {
 };
 
 export async function POST(req) {
-  const { unauthorized } = await requireUser();
+  const { user, unauthorized } = await requireUser();
   if (unauthorized) return unauthorized;
+
+  const limited = await rateLimitOrResponse(user.email, "challenges-generate", 10, 300);
+  if (limited) return limited;
 
   const { category, level } = await req.json();
   if (!category || !level) return NextResponse.json({ error: "Missing fields" }, { status: 400 });

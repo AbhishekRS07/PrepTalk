@@ -1,22 +1,40 @@
 import { requireUser } from "@/lib/auth";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
+// Ranking every user requires reading across accounts, which the caller's own
+// RLS-scoped session client can't do (nor should it be able to). Use the service-role
+// client for this cross-user aggregation only — the route stays behind requireUser(),
+// and the response is pre-aggregated (rank/score/username), never raw rows.
+let _supabaseAdmin;
+const getSupabaseAdmin = () => {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  }
+  return _supabaseAdmin;
+};
+
 export async function GET() {
-  const { supabase, unauthorized } = await requireUser();
+  const { unauthorized } = await requireUser();
   if (unauthorized) return unauthorized;
 
+  const admin = getSupabaseAdmin();
+
   // Fetch all answers
-  const { data: answers } = await supabase
+  const { data: answers } = await admin
     .from("userAnswer")
     .select("userEmail, rating, mockId");
 
   // Fetch all live interviews
-  const { data: liveInterviews } = await supabase
+  const { data: liveInterviews } = await admin
     .from("liveInterview")
     .select("createdBy, score");
 
   // Fetch all profiles for usernames
-  const { data: profiles } = await supabase
+  const { data: profiles } = await admin
     .from("profiles")
     .select("email, username");
 
@@ -45,7 +63,7 @@ export async function GET() {
   }
 
   // Fetch session counts per user from preptalk
-  const { data: interviews } = await supabase
+  const { data: interviews } = await admin
     .from("preptalk")
     .select("createdBy");
 

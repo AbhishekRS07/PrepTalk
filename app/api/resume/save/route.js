@@ -1,5 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { rateLimitOrResponse } from "@/lib/rateLimit";
+import { validatePdfUpload } from "@/lib/validatePdf";
 import { extractText } from "unpdf";
 
 // POST: parse PDF and save resume text + name to user's profile
@@ -7,10 +9,14 @@ export async function POST(req) {
   const { user, supabase, unauthorized } = await requireUser();
   if (unauthorized) return unauthorized;
 
+  const limited = await rateLimitOrResponse(user.email, "resume-save", 10, 300);
+  if (limited) return limited;
+
   const formData = await req.formData();
   const file = formData.get("file");
 
-  if (!file) return NextResponse.json({ error: "Missing file" }, { status: 400 });
+  const validation = await validatePdfUpload(file);
+  if (!validation.ok) return NextResponse.json({ error: validation.error }, { status: 400 });
 
   let resumeText = "";
   try {

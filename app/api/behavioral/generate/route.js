@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { runPromptJSON } from "@/lib/langchain";
+import { rateLimitOrResponse } from "@/lib/rateLimit";
 
 export async function POST(req) {
-  const { unauthorized } = await requireUser();
+  const { user, unauthorized } = await requireUser();
   if (unauthorized) return unauthorized;
+
+  const limited = await rateLimitOrResponse(user.email, "behavioral-generate", 15, 300);
+  if (limited) return limited;
 
   const { category, role, experience } = await req.json();
 

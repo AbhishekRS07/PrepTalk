@@ -4,7 +4,6 @@ import WebcamComponent from "react-webcam";
 import useSpeechToText from "react-hook-speech-to-text";
 import { Mic, MicOff, Loader2, VideoOff, Eye, EyeOff } from "lucide-react";
 import { Button } from "../../../../../../components/ui/button";
-import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -14,7 +13,6 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
   const [userAnswer, setUserAnswer] = useState("");
   const userAnswerRef = useRef("");
   const activeRef = useRef(active);
-  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [webcamEnabled, setWebcamEnabled] = useState(false);
 
@@ -88,7 +86,6 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
           question: question.question,
           correctAns: question.answer,
           userAns: answer,
-          userEmail: user?.email,
         }),
       });
 

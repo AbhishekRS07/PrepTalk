@@ -1,6 +1,8 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { runPromptJSON, getBigModel } from "@/lib/langchain";
+import { rateLimitOrResponse } from "@/lib/rateLimit";
+import { validatePdfUpload } from "@/lib/validatePdf";
 import { v4 as uuidv4 } from "uuid";
 import moment from "moment";
 import { extractText } from "unpdf";
@@ -9,16 +11,14 @@ export async function POST(request) {
   const { user, supabase, unauthorized } = await requireUser();
   if (unauthorized) return unauthorized;
 
+  const limited = await rateLimitOrResponse(user.email, "resume-generate", 10, 300);
+  if (limited) return limited;
+
   const formData = await request.formData();
   const file = formData.get("file");
   const jobPosition = formData.get("jobPosition") || "";
   const experience = formData.get("experience") || "0";
-  const userEmail = formData.get("userEmail");
   const useSaved = formData.get("useSaved") === "true";
-
-  if (!userEmail) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-  }
 
   // Parse PDF or use saved resume text
   let resumeText = "";
@@ -28,7 +28,7 @@ export async function POST(request) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("resume_text")
-      .eq("email", userEmail)
+      .eq("email", user.email)
       .single();
 
     if (!profile?.resume_text) {
@@ -36,7 +36,8 @@ export async function POST(request) {
     }
     resumeText = profile.resume_text;
   } else {
-    if (!file) return NextResponse.json({ error: "Missing file" }, { status: 400 });
+    const validation = await validatePdfUpload(file);
+    if (!validation.ok) return NextResponse.json({ error: validation.error }, { status: 400 });
     try {
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
@@ -95,7 +96,7 @@ Return ONLY a valid JSON array with "question" and "answer" fields. No markdown,
     jobPosition: finalRole,
     jobDesc: `Resume-based: ${truncated.slice(0, 200)}…`,
     jobexperience: experience,
-    createdBy: userEmail,
+    createdBy: user.email,
     createdAt: moment().format("DD-MM-yyyy"),
   });
 

@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { getModel, getLiveModel } from "@/lib/langchain";
+import { rateLimitOrResponse } from "@/lib/rateLimit";
 import { cleanJson } from "@/lib/utils";
 import { HumanMessage, AIMessage, SystemMessage } from "@langchain/core/messages";
 
@@ -37,8 +38,13 @@ Now generate a structured debrief as a JSON object with exactly this shape:
 Return ONLY valid JSON. No markdown, no explanation.`;
 
 export async function POST(request) {
-  const { unauthorized } = await requireUser();
+  const { user, unauthorized } = await requireUser();
   if (unauthorized) return unauthorized;
+
+  // Higher ceiling than other AI routes — a single live-interview session legitimately
+  // fires this once per conversation turn (8-12+ exchanges), not once per action.
+  const limited = await rateLimitOrResponse(user.email, "interview-converse", 60, 300);
+  if (limited) return limited;
 
   const { messages, role, experience, techStack, action } = await request.json();
 

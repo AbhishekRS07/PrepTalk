@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { runPromptJSON, getBigModel } from "@/lib/langchain";
+import { rateLimitOrResponse } from "@/lib/rateLimit";
 import { v4 as uuidv4 } from "uuid";
 import moment from "moment";
 
@@ -8,9 +9,12 @@ export async function POST(request) {
   const { user, supabase, unauthorized } = await requireUser();
   if (unauthorized) return unauthorized;
 
-  const { jobPosition, jobDesc, jobExperience, userEmail } = await request.json();
+  const limited = await rateLimitOrResponse(user.email, "interview-generate", 10, 300);
+  if (limited) return limited;
 
-  if (!jobPosition || !jobDesc || !jobExperience || !userEmail) {
+  const { jobPosition, jobDesc, jobExperience } = await request.json();
+
+  if (!jobPosition || !jobDesc || !jobExperience) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -34,7 +38,7 @@ export async function POST(request) {
     jobPosition,
     jobDesc,
     jobexperience: jobExperience,
-    createdBy: userEmail,
+    createdBy: user.email,
     createdAt: moment().format("DD-MM-yyyy"),
   });
 

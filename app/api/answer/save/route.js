@@ -1,13 +1,17 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { runPromptJSON } from "@/lib/langchain";
+import { rateLimitOrResponse } from "@/lib/rateLimit";
 import moment from "moment";
 
 export async function POST(request) {
-  const { supabase, unauthorized } = await requireUser();
+  const { user, supabase, unauthorized } = await requireUser();
   if (unauthorized) return unauthorized;
 
-  const { mockIdRef, question, correctAns, userAns, userEmail } = await request.json();
+  const limited = await rateLimitOrResponse(user.email, "answer-save", 20, 300);
+  if (limited) return limited;
+
+  const { mockIdRef, question, correctAns, userAns } = await request.json();
 
   if (!mockIdRef || !question || !userAns) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -34,7 +38,7 @@ export async function POST(request) {
     userAns,
     feedback,
     rating,
-    userEmail,
+    userEmail: user.email,
     createdAt: moment().format("DD-MM-yyyy"),
   });
 

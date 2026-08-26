@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { runPromptJSON, getBigModel } from "@/lib/langchain";
+import { rateLimitOrResponse } from "@/lib/rateLimit";
+import { validatePdfUpload } from "@/lib/validatePdf";
 import { extractText } from "unpdf";
 
 export async function POST(req) {
   const { user, supabase, unauthorized } = await requireUser();
   if (unauthorized) return unauthorized;
+
+  const limited = await rateLimitOrResponse(user.email, "resume-analyze", 10, 300);
+  if (limited) return limited;
 
   const formData = await req.formData();
   const file = formData.get("file");
@@ -25,7 +30,8 @@ export async function POST(req) {
     }
     resumeText = profile.resume_text;
   } else {
-    if (!file) return NextResponse.json({ error: "No file provided." }, { status: 400 });
+    const validation = await validatePdfUpload(file);
+    if (!validation.ok) return NextResponse.json({ error: validation.error }, { status: 400 });
     try {
       const arrayBuffer = await file.arrayBuffer();
       const { text } = await extractText(new Uint8Array(arrayBuffer), { mergePages: true });

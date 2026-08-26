@@ -107,7 +107,6 @@ export default function ResumeInterviewPage() {
       }
       formData.append("jobPosition", jobPosition);
       formData.append("experience", experience || "0");
-      formData.append("userEmail", user?.email);
 
       const res = await fetch("/api/resume/generate", { method: "POST", body: formData });
       const data = await res.json();

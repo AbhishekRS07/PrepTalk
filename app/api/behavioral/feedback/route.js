@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { runPromptJSON } from "@/lib/langchain";
+import { rateLimitOrResponse } from "@/lib/rateLimit";
 
 export async function POST(req) {
-  const { unauthorized } = await requireUser();
+  const { user, unauthorized } = await requireUser();
   if (unauthorized) return unauthorized;
+
+  const limited = await rateLimitOrResponse(user.email, "behavioral-feedback", 15, 300);
+  if (limited) return limited;
 
   const { question, answer, category } = await req.json();
   if (!question || !answer) return NextResponse.json({ error: "Missing fields" }, { status: 400 });

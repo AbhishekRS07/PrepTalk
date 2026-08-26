@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { runPromptJSON, getBigModel } from "@/lib/langchain";
+import { rateLimitOrResponse } from "@/lib/rateLimit";
 import { tavily } from "@tavily/core";
 
 let _tavilyClient;
@@ -129,8 +130,11 @@ No markdown, no explanation. Just the JSON array.`;
 
 // ── Route handler ─────────────────────────────────────────────────
 export async function POST(req) {
-  const { unauthorized } = await requireUser();
+  const { user, unauthorized } = await requireUser();
   if (unauthorized) return unauthorized;
+
+  const limited = await rateLimitOrResponse(user.email, "jd-prep-research", 5, 300);
+  if (limited) return limited;
 
   const body = await req.json();
 
