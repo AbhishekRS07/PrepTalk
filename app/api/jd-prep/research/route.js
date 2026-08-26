@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { runPromptJSON } from "@/lib/langchain";
+import { runPromptJSON, getBigModel } from "@/lib/langchain";
 import { tavily } from "@tavily/core";
 
 let _tavilyClient;
@@ -62,7 +62,7 @@ async function searchInterviewQuestions(company, role, techStack) {
           snippets.push({
             source: res.url,
             title: res.title,
-            content: res.content.slice(0, 800),
+            content: res.content.slice(0, 400),
           });
         }
       }
@@ -80,7 +80,7 @@ async function synthesizeQuestions(entries) {
     .map((e, i) => {
       const { company, role, seniority, techStack, keyTopics } = e.meta;
       const searchContext = e.snippets
-        .slice(0, 5)
+        .slice(0, 3)
         .map((s, j) => `[Source ${j + 1}: ${s.title}]\n${s.content}`)
         .join("\n\n");
       return `--- Company ${i + 1}: ${company || "Unknown"} ---
@@ -124,7 +124,7 @@ Reply ONLY with a valid JSON array. Each object must have:
 
 No markdown, no explanation. Just the JSON array.`;
 
-  return runPromptJSON(prompt, "array");
+  return runPromptJSON(prompt, "array", getBigModel());
 }
 
 // ── Route handler ─────────────────────────────────────────────────

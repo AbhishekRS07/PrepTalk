@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { runPromptJSON } from "@/lib/langchain";
+import { runPromptJSON, getBigModel } from "@/lib/langchain";
 import { v4 as uuidv4 } from "uuid";
 import moment from "moment";
 import { extractText } from "unpdf";
@@ -80,7 +80,7 @@ Return ONLY a valid JSON array with "question" and "answer" fields. No markdown,
 
   let parsed;
   try {
-    parsed = await runPromptJSON(prompt, "array");
+    parsed = await runPromptJSON(prompt, "array", getBigModel());
   } catch (err) {
     console.error("Resume-based interview generation error:", err);
     return NextResponse.json({ error: "AI generation failed. Please try again." }, { status: 500 });

@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { runPromptJSON } from "@/lib/langchain";
+import { runPromptJSON, getBigModel } from "@/lib/langchain";
 import { v4 as uuidv4 } from "uuid";
 import moment from "moment";
 
@@ -16,11 +16,11 @@ export async function POST(request) {
 
   const questionCount = process.env.INTERVIEW_QUESTION_COUNT || 5;
 
-  const prompt = `Job position: ${jobPosition}, Job Description: ${jobDesc}, Years of Experience: ${jobExperience}. Depending upon the job position, job description, and the years of experience, generate ${questionCount} interview questions along with the answers in JSON format. Provide "question" and "answer" fields in JSON.`;
+  const prompt = `Job position: ${jobPosition}, Job Description: ${jobDesc.slice(0, 3000)}, Years of Experience: ${jobExperience}. Depending upon the job position, job description, and the years of experience, generate ${questionCount} interview questions along with the answers in JSON format. Provide "question" and "answer" fields in JSON.`;
 
   let cleaned;
   try {
-    cleaned = JSON.stringify(await runPromptJSON(prompt));
+    cleaned = JSON.stringify(await runPromptJSON(prompt, undefined, getBigModel()));
   } catch (err) {
     console.error("Interview generation error:", err);
     return NextResponse.json({ error: "Failed to generate interview questions. Please try again." }, { status: 500 });

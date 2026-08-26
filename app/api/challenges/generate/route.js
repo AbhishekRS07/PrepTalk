@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { runPromptJSON } from "@/lib/langchain";
+import { runPromptJSON, getBigModel } from "@/lib/langchain";
 
 const LEVEL_LABELS = {
   "0": "Fresher (no experience)",
@@ -78,7 +78,7 @@ Return ONLY a valid JSON object (no markdown, no code fences):
 }`;
 
   try {
-    const parsed = await runPromptJSON(prompt);
+    const parsed = await runPromptJSON(prompt, undefined, getBigModel());
     return NextResponse.json(parsed);
   } catch (err) {
     console.error("Challenge generation error:", err);

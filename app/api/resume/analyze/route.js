@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { runPromptJSON } from "@/lib/langchain";
+import { runPromptJSON, getBigModel } from "@/lib/langchain";
 import { extractText } from "unpdf";
 
 export async function POST(req) {
@@ -80,10 +80,23 @@ Return a JSON object (no markdown, no code block) with exactly these fields:
 }`;
 
   try {
-    const parsed = await runPromptJSON(prompt);
+    const parsed = await runPromptJSON(prompt, undefined, getBigModel());
     return NextResponse.json(parsed);
   } catch (err) {
     console.error("Resume analysis error:", err);
-    return NextResponse.json({ error: "Failed to analyze resume" }, { status: 500 });
+    // Resume analysis is the single largest prompt in the app, and this account's Groq
+    // tier hard-caps at 8,000 tokens/minute shared across every AI feature — so this is
+    // the first request to 429 if another AI call landed in the same rolling minute.
+    // Surface that distinctly instead of the generic message, which looked identical to
+    // an actual crash.
+    const isRateLimit = /rate_limit_exceeded|"code":"rate_limit/.test(err?.message || "");
+    return NextResponse.json(
+      {
+        error: isRateLimit
+          ? "PrepTalk's AI is briefly rate-limited — please wait about a minute and try again."
+          : "Failed to analyze resume",
+      },
+      { status: isRateLimit ? 429 : 500 }
+    );
   }
 }
