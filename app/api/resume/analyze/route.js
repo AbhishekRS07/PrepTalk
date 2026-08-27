@@ -48,7 +48,11 @@ export async function POST(req) {
       .eq("email", user.email);
   }
 
-  const truncated = resumeText.slice(0, 4000);
+  // Matches the 8000-char cap resume/save already stores — truncating further here
+  // silently dropped whatever came after char 4000, which for many resumes is the
+  // Education section (commonly placed last for experienced candidates), causing the
+  // analyzer to report it as "missing" when it was just never sent to the model.
+  const truncated = resumeText.slice(0, 8000);
   const jdSection = jobDescription
     ? `\nJob Description to match against:\n---\n${jobDescription.slice(0, 1500)}\n---`
     : "";

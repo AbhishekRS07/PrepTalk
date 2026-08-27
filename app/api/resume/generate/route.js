@@ -53,8 +53,10 @@ export async function POST(request) {
     }
   }
 
-  // Truncate to avoid token limits
-  const truncated = resumeText.slice(0, 4000);
+  // Matches the 8000-char cap resume/save already stores — truncating further here
+  // silently drops whatever comes after char 4000 (often Education, for experienced
+  // candidates who list it last).
+  const truncated = resumeText.slice(0, 8000);
   const questionCount = process.env.INTERVIEW_QUESTION_COUNT || 5;
 
   const roleHint = jobPosition
