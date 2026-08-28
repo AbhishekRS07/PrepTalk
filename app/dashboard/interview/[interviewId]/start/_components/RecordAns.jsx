@@ -2,12 +2,13 @@
 import { useEffect, useImperativeHandle, useRef, useState, forwardRef, useCallback } from "react";
 import WebcamComponent from "react-webcam";
 import useSpeechToText from "react-hook-speech-to-text";
-import { Mic, MicOff, Loader2, VideoOff, Eye, EyeOff } from "lucide-react";
+import { Mic, MicOff, Loader2, VideoOff, Eye, EyeOff, PersonStanding, RotateCcw } from "lucide-react";
 import { Button } from "../../../../../../components/ui/button";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useEyeTracking } from "@/lib/useEyeTracking";
+import PostureOverlay from "./PostureOverlay";
 
 const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref) => {
   const [userAnswer, setUserAnswer] = useState("");
@@ -24,7 +25,16 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
     useSpeechToText({ continuous: true, useLegacyResults: false });
 
   // ── Eye tracking ────────────────────────────────────────────────
-  const { isTracking, faceDetected, warningActive } = useEyeTracking({
+  const {
+    isTracking,
+    faceDetected,
+    warningActive,
+    poseLandmarks,
+    postureOk,
+    postureTarget,
+    recalibratePosture,
+    integrityWarningActive,
+  } = useEyeTracking({
     videoRef,
     enabled: webcamEnabled && !!interviewData?.mockId,
     mockId: interviewData?.mockId,
@@ -122,17 +132,40 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
     ? "Distraction detected"
     : "Eye tracking active";
 
+  // Posture status — same color language as the eye-tracking dot, but stays neutral
+  // (grey) rather than amber when the pose model simply can't see the shoulders, since
+  // that's not itself a posture problem (the separate hint above already covers it).
+  const postureHasSignal = isTracking && !!poseLandmarks;
+  const postureDotColor = !webcamEnabled || !postureHasSignal
+    ? "bg-zinc-500"
+    : postureOk
+    ? "bg-emerald-400"
+    : "bg-amber-400";
+
+  const postureTitle = !webcamEnabled
+    ? "Camera off"
+    : !postureHasSignal
+    ? "Posture tracking — shoulders not visible"
+    : postureOk
+    ? "Posture looks good"
+    : "Posture needs adjusting";
+
   return (
     <div className="flex flex-col gap-4 h-full">
       {/* Webcam */}
       <div className="bg-muted rounded-2xl overflow-hidden aspect-video flex items-center justify-center relative">
         {webcamEnabled ? (
-          <WebcamComponent
-            ref={webcamRef}
-            onUserMedia={handleUserMedia}
-            mirrored
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
+          <>
+            <WebcamComponent
+              ref={webcamRef}
+              onUserMedia={handleUserMedia}
+              mirrored
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+            {isTracking && (
+              <PostureOverlay videoRef={videoRef} poseLandmarks={poseLandmarks} postureTarget={postureTarget} />
+            )}
+          </>
         ) : (
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <VideoOff className="h-10 w-10" />
@@ -155,26 +188,61 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
           )}
         </AnimatePresence>
 
-        {/* Eye tracking status indicator */}
+        {/* Posture tracking hint — shown when tracking is active but the pose model
+            can't currently find shoulders in frame (e.g. sitting too close, cropped
+            out). Without this, "no overlay lines" looks identical to "broken." */}
+        <AnimatePresence>
+          {isTracking && !poseLandmarks && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="absolute top-3 left-3 right-3 flex items-center justify-center bg-black/60 text-white text-xs px-3 py-1.5 rounded-full text-center"
+            >
+              Move back a little so your shoulders are visible for posture tracking
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Tracking status indicator — eye contact + posture side by side in one badge */}
         {webcamEnabled && (
-          <div
-            className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/50 text-white text-xs px-2 py-1 rounded-full"
-            title={dotTitle}
-          >
-            <span className={cn("h-2 w-2 rounded-full shrink-0", dotColor, !isTracking && "animate-pulse")} />
-            {isTracking ? (
-              faceDetected ? (
-                <Eye className="h-3 w-3" />
+          <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+            <div className="flex items-center gap-1.5" title={dotTitle}>
+              <span className={cn("h-2 w-2 rounded-full shrink-0", dotColor, !isTracking && "animate-pulse")} />
+              {isTracking ? (
+                faceDetected ? (
+                  <Eye className="h-3 w-3" />
+                ) : (
+                  <EyeOff className="h-3 w-3 text-amber-300" />
+                )
               ) : (
-                <EyeOff className="h-3 w-3 text-amber-300" />
-              )
-            ) : (
-              <Eye className="h-3 w-3 opacity-40" />
-            )}
+                <Eye className="h-3 w-3 opacity-40" />
+              )}
+            </div>
+            <span className="h-3 w-px bg-white/20 shrink-0" />
+            <div className="flex items-center gap-1.5" title={postureTitle}>
+              <span className={cn("h-2 w-2 rounded-full shrink-0", postureDotColor)} />
+              <PersonStanding className={cn("h-3 w-3", !postureHasSignal && "opacity-40")} />
+            </div>
           </div>
         )}
 
-        {/* Warning flash overlay */}
+        {/* Recalibrate posture target — the target line is captured automatically, but
+            if it still looks off (camera bumped, different seat) this resets it from
+            the person's current position instead of living with a bad one all session */}
+        {isTracking && postureTarget && (
+          <button
+            type="button"
+            onClick={recalibratePosture}
+            title="Reset posture target to your current position"
+            className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/50 hover:bg-black/70 text-white text-xs px-2 py-1 rounded-full transition-colors"
+          >
+            <RotateCcw className="h-3 w-3" />
+          </button>
+        )}
+
+        {/* Warning flash overlay — amber for habit-coaching (attention/posture), a
+            distinct red for integrity checks so the two categories don't look the same */}
         <AnimatePresence>
           {warningActive && (
             <motion.div
@@ -183,6 +251,17 @@ const RecordAns = forwardRef(({ mockInterQuestion, active, interviewData }, ref)
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               className="absolute inset-0 border-2 border-amber-400 rounded-2xl pointer-events-none"
+            />
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {integrityWarningActive && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 border-2 border-red-500 rounded-2xl pointer-events-none"
             />
           )}
         </AnimatePresence>

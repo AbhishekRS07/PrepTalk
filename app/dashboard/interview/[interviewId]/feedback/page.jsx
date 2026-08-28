@@ -18,6 +18,10 @@ import {
   Check,
   Eye,
   MessageSquareOff,
+  ShieldCheck,
+  ShieldAlert,
+  Smartphone,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -244,6 +248,63 @@ function AttentionCard({ score, violations }) {
   );
 }
 
+// ── Integrity card ──────────────────────────────────────────────
+// Deliberately styled distinct from AttentionCard — no percentage/score, no colored
+// progress bar. This is a log of possible incidents, not a graded metric, and it never
+// factored into the score above.
+function IntegrityCard({ incidents }) {
+  const count = incidents?.length ?? 0;
+  const phoneCount = incidents?.filter((i) => i.type === "phone_detected").length ?? 0;
+  const personCount = incidents?.filter((i) => i.type === "extra_person").length ?? 0;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+      className="bg-card border border-border rounded-3xl p-6"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        {count === 0 ? (
+          <ShieldCheck className="h-4 w-4 text-emerald-500" />
+        ) : (
+          <ShieldAlert className="h-4 w-4 text-amber-500" />
+        )}
+        <span className="text-sm font-semibold font-mono text-muted-foreground uppercase tracking-widest">
+          Integrity Check
+        </span>
+      </div>
+
+      {count === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No phone or extra person detected during this session.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground mb-3">
+            {count} possible incident{count !== 1 ? "s" : ""} flagged — this did not affect your score above.
+          </p>
+          {phoneCount > 0 && (
+            <div className="flex items-center gap-2 text-sm">
+              <Smartphone className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+              <span>Phone possibly visible — {phoneCount} time{phoneCount !== 1 ? "s" : ""}</span>
+            </div>
+          )}
+          {personCount > 0 && (
+            <div className="flex items-center gap-2 text-sm">
+              <Users className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+              <span>Second person possibly visible — {personCount} time{personCount !== 1 ? "s" : ""}</span>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground pt-1">
+            Automated detection isn't perfect — a poster, photo, or object in the background can trigger a false flag.
+          </p>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────
 const Feedback = () => {
   const params = useParams();
@@ -253,6 +314,7 @@ const Feedback = () => {
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [attentionData, setAttentionData] = useState(null);
+  const [integrityData, setIntegrityData] = useState(null);
   const router = useRouter();
 
   const handleShare = async () => {
@@ -277,10 +339,14 @@ const Feedback = () => {
 
   useEffect(() => {
     GetFeedback();
-    // Read attention data saved during the session
+    // Read attention + integrity data saved during the session
     try {
       const raw = sessionStorage.getItem(`attention_${params.interviewId}`);
       if (raw) setAttentionData(JSON.parse(raw));
+    } catch (_) {}
+    try {
+      const raw = sessionStorage.getItem(`integrity_${params.interviewId}`);
+      if (raw) setIntegrityData(JSON.parse(raw));
     } catch (_) {}
   }, []);
 
@@ -416,6 +482,9 @@ const Feedback = () => {
           violations={attentionData.violations}
         />
       )}
+
+      {/* Integrity check — separate card, no score impact */}
+      {integrityData && <IntegrityCard incidents={integrityData.incidents} />}
 
       {/* Per-question breakdown */}
       <div>
