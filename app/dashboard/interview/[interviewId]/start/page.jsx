@@ -225,6 +225,17 @@ const StartInterview = () => {
     ? Math.round(((active + 1) / prepTalks.length) * 100)
     : 0;
 
+  // Interview questions haven't loaded yet — render a loading state instead of the
+  // full layout with an empty "1 / 0" progress bar and a blank question card, which
+  // looked broken/sparse for the brief window before GetInterviewDetails() resolves.
+  if (!interviewData || prepTalks.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Progress bar */}
